@@ -4,11 +4,12 @@ import (
 	"concrete-factory-backend/config"
 	"concrete-factory-backend/middleware"
 	"concrete-factory-backend/models"
+	"net/http"
+	"time"
+
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
-	"net/http"
-	"time"
 )
 
 func Register(c *gin.Context) {

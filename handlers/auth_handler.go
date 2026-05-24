@@ -38,8 +38,13 @@ func Register(c *gin.Context) {
 		Role:     "customer",
 	}
 
+	var existing models.User
+	if config.DB.Where("email = ?", body.Email).First(&existing).Error == nil {
+		c.JSON(http.StatusConflict, gin.H{"error": "Email already exists"})
+		return
+	}
 	if err := config.DB.Create(&user).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Email already exists"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Registration failed: " + err.Error()})
 		return
 	}
 

@@ -27,6 +27,21 @@ func CreateCategory(c *gin.Context) {
 	c.JSON(http.StatusCreated, category)
 }
 
+func UpdateCategory(c *gin.Context) {
+	id := c.Param("id")
+	var category models.Category
+	if err := config.DB.First(&category, id).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Category not found"})
+		return
+	}
+	if err := c.ShouldBindJSON(&category); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	config.DB.Save(&category)
+	c.JSON(http.StatusOK, category)
+}
+
 func DeleteCategory(c *gin.Context) {
 	id := c.Param("id")
 	config.DB.Delete(&models.Category{}, id)

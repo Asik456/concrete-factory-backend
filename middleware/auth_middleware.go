@@ -1,13 +1,22 @@
 package middleware
 
 import (
+	"net/http"
+	"os"
+	"strings"
+
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
-	"net/http"
-	"strings"
 )
 
-var JwtSecret = []byte("concrete-factory-secret")
+var JwtSecret = []byte(getJwtSecret())
+
+func getJwtSecret() string {
+	if s := os.Getenv("JWT_SECRET"); s != "" {
+		return s
+	}
+	return "concrete-factory-secret"
+}
 
 func AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {

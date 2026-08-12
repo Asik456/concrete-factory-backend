@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Full-stack concrete factory e-commerce site ("JBI Beton") for a Kazakhstani concrete products company. Backend: Go + Gin + GORM + PostgreSQL. Frontend: React 18 + TypeScript + Vite + Tailwind CSS. Microservice: separate Go notification service.
+Full-stack concrete factory e-commerce site ("JSI Beton") for a Kazakhstani concrete products company (ТОО «JSI Бетон Алматы»). Backend: Go + Gin + GORM + PostgreSQL. Frontend: React 18 + TypeScript + Vite + Tailwind CSS. Microservice: separate Go notification service. Orders go through WhatsApp (no cart/online checkout); registration requires email verification.
 
 ## Running the Project
 

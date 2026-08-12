@@ -19,7 +19,7 @@ export default function Navbar() {
         <div className="flex items-center justify-between h-16">
           <Link to="/" className="flex items-center gap-2">
             <span className="text-2xl">🏗️</span>
-            <span className="font-bold text-lg text-yellow-400">JBI Beton</span>
+            <span className="font-bold text-lg text-yellow-400">JSI Beton</span>
           </Link>
 
           <div className="hidden md:flex items-center gap-6">

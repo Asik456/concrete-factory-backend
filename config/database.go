@@ -61,6 +61,18 @@ func ConnectDB() {
 	}
 	log.Println("Connected to database!")
 
+	// Serverless Postgres (e.g. Neon) suspends its compute after a few minutes idle and
+	// can drop connections server-side without the client noticing. Without pool limits,
+	// database/sql happily keeps handing out those dead connections, and a query on one
+	// hangs until the OS TCP timeout instead of failing fast — that's what turns a normal
+	// request into a 10-80s stall. Capping idle time forces the pool to reconnect instead.
+	if sqlDB, err := db.DB(); err == nil {
+		sqlDB.SetMaxOpenConns(10)
+		sqlDB.SetMaxIdleConns(2)
+		sqlDB.SetConnMaxIdleTime(2 * time.Minute)
+		sqlDB.SetConnMaxLifetime(30 * time.Minute)
+	}
+
 	runMigrations(host, user, password, dbname, port, sslmode)
 
 	// AutoMigrate is a safety net for local dev — it introspects every table's schema

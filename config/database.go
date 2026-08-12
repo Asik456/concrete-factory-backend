@@ -305,20 +305,18 @@ func seedProducts(db *gorm.DB) {
 		specs: []models.ProductSpec{{Key: "Размер", Value: "12×20×40 см"}, {Key: "Единица", Value: "шт"}},
 	})
 
-	// Примечание: отдельного фото под размер 40×20×40 нет — переиспользуем фото
-	// колонны 33×33×20 (тот же тип изделия), пока не будет прислано отдельное фото.
 	descRu, descKz, descEn = blockDesc("Колонна/тумба 40×20×40", "Баған/тумба 40×20×40", "Column/pillar 40×20×40")
 	seeds = append(seeds, productSeed{
 		p: models.Product{
 			CategoryID: cats[3].ID, NameRu: "Колонна/тумба 40×20×40", NameKz: "Баған/тумба 40×20×40", NameEn: "Column/pillar 40×20×40",
 			DescriptionRu: descRu, DescriptionKz: descKz, DescriptionEn: descEn,
-			Price: 500, Image: "/images/products/column-grey-smooth.jpeg", IsActive: true,
+			Price: 500, Image: "/images/products/column-grey-40x40.jpg", IsActive: true,
 		},
 		specs: []models.ProductSpec{{Key: "Размер", Value: "40×20×40 см"}, {Key: "Единица", Value: "шт"}},
 		variants: []models.ProductVariant{
-			{ColorKey: "grey", Price: 500, Image: "/images/products/column-grey-smooth.jpeg"},
-			{ColorKey: "red", Price: 620, Image: "/images/products/column-red-smooth.jpeg"},
-			{ColorKey: "black", Price: 650, Image: "/images/products/column-black-smooth.jpeg"},
+			{ColorKey: "grey", Price: 500, Image: "/images/products/column-grey-40x40.jpg"},
+			{ColorKey: "red", Price: 620, Image: "/images/products/column-red-40x40.jpg"},
+			{ColorKey: "black", Price: 650, Image: "/images/products/column-black-40x40.jpg"},
 		},
 	})
 

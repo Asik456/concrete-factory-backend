@@ -5,6 +5,7 @@ import (
 	"concrete-factory-backend/handlers"
 	"concrete-factory-backend/middleware"
 	"net/http"
+	"os"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
@@ -70,5 +71,9 @@ func main() {
 		}
 	}
 
-	r.Run(":8080")
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+	r.Run(":" + port)
 }

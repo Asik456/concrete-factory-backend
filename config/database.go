@@ -38,9 +38,13 @@ func ConnectDB() {
 	if port == "" {
 		port = "5432"
 	}
+	sslmode := os.Getenv("DB_SSLMODE")
+	if sslmode == "" {
+		sslmode = "disable"
+	}
 
-	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable",
-		host, user, password, dbname, port)
+	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=%s",
+		host, user, password, dbname, port, sslmode)
 
 	var db *gorm.DB
 	var err error
@@ -57,7 +61,7 @@ func ConnectDB() {
 	}
 	log.Println("Connected to database!")
 
-	runMigrations(host, user, password, dbname, port)
+	runMigrations(host, user, password, dbname, port, sslmode)
 
 	db.AutoMigrate(
 		&models.User{},
@@ -74,12 +78,12 @@ func ConnectDB() {
 	DB = db
 }
 
-func runMigrations(host, user, password, dbname, port string) {
+func runMigrations(host, user, password, dbname, port, sslmode string) {
 	migrationsPath := os.Getenv("MIGRATIONS_PATH")
 	if migrationsPath == "" {
 		migrationsPath = "file://db/migrations"
 	}
-	dbURL := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable", user, password, host, port, dbname)
+	dbURL := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=%s", user, password, host, port, dbname, sslmode)
 	m, err := migrate.New(migrationsPath, dbURL)
 	if err != nil {
 		log.Printf("Migration init error: %v", err)

@@ -31,6 +31,7 @@ export interface ProductVariant {
   product_id?: number
   color_key: ColorKey
   price: number
+  image?: string
 }
 
 export interface Product {

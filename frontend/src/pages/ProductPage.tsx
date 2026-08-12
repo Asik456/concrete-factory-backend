@@ -34,6 +34,7 @@ export default function ProductPage() {
 
   const selectedVariant = product.variants?.find((v) => v.color_key === selectedColor)
   const currentPrice = selectedVariant ? selectedVariant.price : (hasDiscount ? product.discount_price! : product.price)
+  const displayImage = selectedVariant?.image || product.image
 
   const waLink = buildWhatsAppOrderLink(product, lang, selectedVariant?.color_key)
 
@@ -46,8 +47,8 @@ export default function ProductPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
         {/* Image */}
         <div className="rounded-2xl overflow-hidden bg-gray-100 h-80 md:h-auto">
-          {product.image ? (
-            <img src={product.image} alt={name} className="w-full h-full object-cover" />
+          {displayImage ? (
+            <img src={displayImage} alt={name} className="w-full h-full object-cover" />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-8xl">🧱</div>
           )}

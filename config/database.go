@@ -152,14 +152,15 @@ func seedProducts(db *gorm.DB) {
 		volume             string
 		weight             string
 		price, priceWholes float64
+		image              string
 	}
 	rings := []ringSeed{
-		{"КС10.6", "1000×590 мм", "0.16 м³", "400 кг", 12000, 13500},
-		{"КС10.9", "1000×890 мм", "0.24 м³", "600 кг", 14000, 17000},
-		{"КС15.6", "1500×590 мм", "0.27 м³", "660 кг", 16000, 18000},
-		{"КС15.9", "1500×890 мм", "0.4 м³", "1000 кг", 18000, 24000},
-		{"КС20.6", "2000×590 мм", "0.39 м³", "980 кг", 29000, 32000},
-		{"КС20.9", "2000×890 мм", "0.59 м³", "1480 кг", 33500, 38000},
+		{"КС10.6", "1000×590 мм", "0.16 м³", "400 кг", 12000, 13500, "/images/products/kc-10.6.webp"},
+		{"КС10.9", "1000×890 мм", "0.24 м³", "600 кг", 14000, 17000, "/images/products/kc-10.9.webp"},
+		{"КС15.6", "1500×590 мм", "0.27 м³", "660 кг", 16000, 18000, "/images/products/kc-15.6.jpg"},
+		{"КС15.9", "1500×890 мм", "0.4 м³", "1000 кг", 18000, 24000, "/images/products/kc-15.9.webp"},
+		{"КС20.6", "2000×590 мм", "0.39 м³", "980 кг", 29000, 32000, "/images/products/kc-20.6.webp"},
+		{"КС20.9", "2000×890 мм", "0.59 м³", "1480 кг", 33500, 38000, "/images/products/kc-20.9.webp"},
 	}
 	for _, r := range rings {
 		descRu, descKz, descEn := ringDesc(r.code)
@@ -167,7 +168,7 @@ func seedProducts(db *gorm.DB) {
 			p: models.Product{
 				CategoryID: cats[0].ID, NameRu: r.code, NameKz: r.code, NameEn: r.code,
 				DescriptionRu: descRu, DescriptionKz: descKz, DescriptionEn: descEn,
-				Price: r.price, PriceWholesale: ptr(r.priceWholes), IsActive: true,
+				Price: r.price, PriceWholesale: ptr(r.priceWholes), Image: r.image, IsActive: true,
 			},
 			specs: []models.ProductSpec{
 				{Key: "Размер", Value: r.size},
@@ -199,7 +200,7 @@ func seedProducts(db *gorm.DB) {
 			p: models.Product{
 				CategoryID: cats[1].ID, NameRu: p.code, NameKz: p.code, NameEn: p.code,
 				DescriptionRu: descRu, DescriptionKz: descKz, DescriptionEn: descEn,
-				Price: p.price, PriceWholesale: ptr(p.priceWholes), IsActive: true,
+				Price: p.price, PriceWholesale: ptr(p.priceWholes), Image: "/images/products/cover-plate.webp", IsActive: true,
 			},
 			specs: []models.ProductSpec{
 				{Key: "Размер", Value: p.size},
@@ -222,7 +223,7 @@ func seedProducts(db *gorm.DB) {
 			p: models.Product{
 				CategoryID: cats[2].ID, NameRu: p.code, NameKz: p.code, NameEn: p.code,
 				DescriptionRu: descRu, DescriptionKz: descKz, DescriptionEn: descEn,
-				Price: p.price, PriceWholesale: ptr(p.priceWholes), IsActive: true,
+				Price: p.price, PriceWholesale: ptr(p.priceWholes), Image: "/images/products/bottom-plate.jpg", IsActive: true,
 			},
 			specs: []models.ProductSpec{
 				{Key: "Размер", Value: p.size},
@@ -239,10 +240,14 @@ func seedProducts(db *gorm.DB) {
 		p: models.Product{
 			CategoryID: cats[3].ID, NameRu: "Сплитерный блок 20×20×40", NameKz: "Сплитерлі блок 20×20×40", NameEn: "Splitter block 20×20×40",
 			DescriptionRu: descRu, DescriptionKz: descKz, DescriptionEn: descEn,
-			Price: 190, IsActive: true,
+			Price: 190, Image: "/images/products/block-grey-smooth.jpeg", IsActive: true,
 		},
-		specs:    []models.ProductSpec{{Key: "Размер", Value: "20×20×40 см"}, {Key: "Единица", Value: "шт"}},
-		variants: []models.ProductVariant{{ColorKey: "grey", Price: 190}, {ColorKey: "red", Price: 310}, {ColorKey: "black", Price: 350}},
+		specs: []models.ProductSpec{{Key: "Размер", Value: "20×20×40 см"}, {Key: "Единица", Value: "шт"}},
+		variants: []models.ProductVariant{
+			{ColorKey: "grey", Price: 190, Image: "/images/products/block-grey-smooth.jpeg"},
+			{ColorKey: "red", Price: 310, Image: "/images/products/block-red-smooth.jpeg"},
+			{ColorKey: "black", Price: 350, Image: "/images/products/block-black-smooth.jpeg"},
+		},
 	})
 
 	descRu, descKz, descEn = blockDesc("Сплитерный блок рванный 20×20×40", "Сплитерлі жарылған блок 20×20×40", "Split-face splitter block 20×20×40")
@@ -250,10 +255,14 @@ func seedProducts(db *gorm.DB) {
 		p: models.Product{
 			CategoryID: cats[3].ID, NameRu: "Сплитерный блок – рванный 20×20×40", NameKz: "Сплитерлі блок – жарылған 20×20×40", NameEn: "Splitter block – split-face 20×20×40",
 			DescriptionRu: descRu, DescriptionKz: descKz, DescriptionEn: descEn,
-			Price: 290, IsActive: true,
+			Price: 290, Image: "/images/products/block-grey-splitface.jpeg", IsActive: true,
 		},
-		specs:    []models.ProductSpec{{Key: "Размер", Value: "20×20×40 см"}, {Key: "Единица", Value: "шт"}},
-		variants: []models.ProductVariant{{ColorKey: "grey", Price: 290}, {ColorKey: "red", Price: 350}, {ColorKey: "black", Price: 380}},
+		specs: []models.ProductSpec{{Key: "Размер", Value: "20×20×40 см"}, {Key: "Единица", Value: "шт"}},
+		variants: []models.ProductVariant{
+			{ColorKey: "grey", Price: 290, Image: "/images/products/block-grey-splitface.jpeg"},
+			{ColorKey: "red", Price: 350, Image: "/images/products/block-red-splitface.jpeg"},
+			{ColorKey: "black", Price: 380, Image: "/images/products/block-black-splitface.jpeg"},
+		},
 	})
 
 	descRu, descKz, descEn = blockDesc("Колонна/тумба 33×33×20", "Баған/тумба 33×33×20", "Column/pillar 33×33×20")
@@ -261,10 +270,14 @@ func seedProducts(db *gorm.DB) {
 		p: models.Product{
 			CategoryID: cats[3].ID, NameRu: "Колонна/тумба 33×33×20", NameKz: "Баған/тумба 33×33×20", NameEn: "Column/pillar 33×33×20",
 			DescriptionRu: descRu, DescriptionKz: descKz, DescriptionEn: descEn,
-			Price: 320, IsActive: true,
+			Price: 320, Image: "/images/products/column-grey-smooth.jpeg", IsActive: true,
 		},
-		specs:    []models.ProductSpec{{Key: "Размер", Value: "33×33×20 см"}, {Key: "Единица", Value: "шт"}},
-		variants: []models.ProductVariant{{ColorKey: "grey", Price: 320}, {ColorKey: "red", Price: 420}, {ColorKey: "black", Price: 450}},
+		specs: []models.ProductSpec{{Key: "Размер", Value: "33×33×20 см"}, {Key: "Единица", Value: "шт"}},
+		variants: []models.ProductVariant{
+			{ColorKey: "grey", Price: 320, Image: "/images/products/column-grey-smooth.jpeg"},
+			{ColorKey: "red", Price: 420, Image: "/images/products/column-red-smooth.jpeg"},
+			{ColorKey: "black", Price: 450, Image: "/images/products/column-black-smooth.jpeg"},
+		},
 	})
 
 	descRu, descKz, descEn = blockDesc("Рванная колонна/тумба 33×33×20", "Жарылған баған/тумба 33×33×20", "Split-face column/pillar 33×33×20")
@@ -272,10 +285,14 @@ func seedProducts(db *gorm.DB) {
 		p: models.Product{
 			CategoryID: cats[3].ID, NameRu: "Рванная колонна/тумба 33×33×20", NameKz: "Жарылған баған/тумба 33×33×20", NameEn: "Split-face column/pillar 33×33×20",
 			DescriptionRu: descRu, DescriptionKz: descKz, DescriptionEn: descEn,
-			Price: 400, IsActive: true,
+			Price: 400, Image: "/images/products/column-grey-splitface.jpeg", IsActive: true,
 		},
-		specs:    []models.ProductSpec{{Key: "Размер", Value: "33×33×20 см"}, {Key: "Единица", Value: "шт"}},
-		variants: []models.ProductVariant{{ColorKey: "grey", Price: 400}, {ColorKey: "red", Price: 450}, {ColorKey: "black", Price: 500}},
+		specs: []models.ProductSpec{{Key: "Размер", Value: "33×33×20 см"}, {Key: "Единица", Value: "шт"}},
+		variants: []models.ProductVariant{
+			{ColorKey: "grey", Price: 400, Image: "/images/products/column-grey-splitface.jpeg"},
+			{ColorKey: "red", Price: 450, Image: "/images/products/column-red-splitface.jpeg"},
+			{ColorKey: "black", Price: 500, Image: "/images/products/column-black-splitface.jpg"},
+		},
 	})
 
 	descRu, descKz, descEn = blockDesc("Межкомнатный блок 12×20×40", "Бөлме аралық блок 12×20×40", "Interior partition block 12×20×40")
@@ -283,20 +300,26 @@ func seedProducts(db *gorm.DB) {
 		p: models.Product{
 			CategoryID: cats[3].ID, NameRu: "Межкомнатный блок 12×20×40", NameKz: "Бөлме аралық блок 12×20×40", NameEn: "Interior partition block 12×20×40",
 			DescriptionRu: descRu, DescriptionKz: descKz, DescriptionEn: descEn,
-			Price: 155, IsActive: true,
+			Price: 155, Image: "/images/products/partition-block.jpeg", IsActive: true,
 		},
 		specs: []models.ProductSpec{{Key: "Размер", Value: "12×20×40 см"}, {Key: "Единица", Value: "шт"}},
 	})
 
+	// Примечание: отдельного фото под размер 40×20×40 нет — переиспользуем фото
+	// колонны 33×33×20 (тот же тип изделия), пока не будет прислано отдельное фото.
 	descRu, descKz, descEn = blockDesc("Колонна/тумба 40×20×40", "Баған/тумба 40×20×40", "Column/pillar 40×20×40")
 	seeds = append(seeds, productSeed{
 		p: models.Product{
 			CategoryID: cats[3].ID, NameRu: "Колонна/тумба 40×20×40", NameKz: "Баған/тумба 40×20×40", NameEn: "Column/pillar 40×20×40",
 			DescriptionRu: descRu, DescriptionKz: descKz, DescriptionEn: descEn,
-			Price: 500, IsActive: true,
+			Price: 500, Image: "/images/products/column-grey-smooth.jpeg", IsActive: true,
 		},
-		specs:    []models.ProductSpec{{Key: "Размер", Value: "40×20×40 см"}, {Key: "Единица", Value: "шт"}},
-		variants: []models.ProductVariant{{ColorKey: "grey", Price: 500}, {ColorKey: "red", Price: 620}, {ColorKey: "black", Price: 650}},
+		specs: []models.ProductSpec{{Key: "Размер", Value: "40×20×40 см"}, {Key: "Единица", Value: "шт"}},
+		variants: []models.ProductVariant{
+			{ColorKey: "grey", Price: 500, Image: "/images/products/column-grey-smooth.jpeg"},
+			{ColorKey: "red", Price: 620, Image: "/images/products/column-red-smooth.jpeg"},
+			{ColorKey: "black", Price: 650, Image: "/images/products/column-black-smooth.jpeg"},
+		},
 	})
 
 	// --- Бетон (цена за 1 м³, с НДС и доставкой — по прайсу "КП ЖСИ.docx") ---
@@ -320,7 +343,7 @@ func seedProducts(db *gorm.DB) {
 				DescriptionRu: fmt.Sprintf("Товарный бетон марки %s. Цена за 1 м³, включая НДС и доставку.", g.grade),
 				DescriptionKz: fmt.Sprintf("%s маркалы тауарлы бетон. 1 м³ бағасы, ҚҚС және жеткізу қосылған.", g.grade),
 				DescriptionEn: fmt.Sprintf("Ready-mix concrete grade %s. Price per 1 m³, VAT and delivery included.", g.grade),
-				Price:         g.price, IsActive: true,
+				Price:         g.price, Image: "/images/products/concrete.webp", IsActive: true,
 			},
 			specs: []models.ProductSpec{
 				{Key: "Марка", Value: g.grade},

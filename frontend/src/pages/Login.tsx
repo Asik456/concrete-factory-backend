@@ -40,7 +40,7 @@ export default function Login() {
     <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
       <div className="bg-white rounded-2xl shadow-lg p-8 w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="text-4xl mb-2">🏗️</div>
+          <img src="/images/logo.jpg" alt="JSI Beton" className="w-16 h-16 rounded-full object-cover mx-auto mb-2" />
           <h1 className="text-2xl font-bold text-gray-900">{t('auth.login_title')}</h1>
         </div>
 

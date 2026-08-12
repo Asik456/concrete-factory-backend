@@ -83,6 +83,46 @@ func emailWelcome(toEmail, name string) {
 	go sendEmail(toEmail, subject, body)
 }
 
+func emailPasswordResetCode(toEmail, name, code string) {
+	if !smtpConfigured() {
+		log.Printf("[Email][DEV] SMTP не настроен — код сброса пароля для %s: %s\n", toEmail, code)
+	}
+	subject := "Код для сброса пароля — JSI Beton"
+	body := fmt.Sprintf(`
+<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto">
+  <div style="background:#1f2937;padding:20px;border-radius:8px 8px 0 0">
+    <h2 style="color:#fbbf24;margin:0">🏗️ JSI Beton</h2>
+  </div>
+  <div style="background:#f9fafb;padding:24px;border-radius:0 0 8px 8px">
+    <p>Здравствуйте, %s!</p>
+    <p>Вы запросили сброс пароля на сайте JSI Beton. Введите этот код на сайте, чтобы задать новый пароль:</p>
+    <div style="margin:20px 0;padding:16px;background:#fef3c7;border-radius:6px;text-align:center">
+      <span style="font-size:32px;font-weight:bold;letter-spacing:8px;color:#92400e">%s</span>
+    </div>
+    <p style="color:#6b7280;font-size:13px">Код действителен 15 минут. Если вы не запрашивали сброс пароля, просто проигнорируйте это письмо — ваш пароль останется прежним.</p>
+  </div>
+</div>`, name, code)
+	go sendEmail(toEmail, subject, body)
+}
+
+func emailPasswordChanged(toEmail, name string) {
+	subject := "Пароль изменён — JSI Beton"
+	body := fmt.Sprintf(`
+<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto">
+  <div style="background:#1f2937;padding:20px;border-radius:8px 8px 0 0">
+    <h2 style="color:#fbbf24;margin:0">🏗️ JSI Beton</h2>
+  </div>
+  <div style="background:#f9fafb;padding:24px;border-radius:0 0 8px 8px">
+    <p>Здравствуйте, %s!</p>
+    <p>Пароль от вашего аккаунта на сайте JSI Beton был только что изменён.</p>
+    <p style="margin-top:20px;padding:12px;background:#fee2e2;border-radius:6px;color:#991b1b">
+      ⚠️ Если это были не вы — срочно свяжитесь с нами.
+    </p>
+  </div>
+</div>`, name)
+	go sendEmail(toEmail, subject, body)
+}
+
 func emailNewInquiry(name, phone, message string) {
 	subject := "📞 Новая заявка на обратный звонок — JSI Beton"
 	body := fmt.Sprintf(`

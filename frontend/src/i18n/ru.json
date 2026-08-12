@@ -78,7 +78,19 @@
     "invalid_credentials": "Неверный email или пароль",
     "server_unavailable": "Сервер недоступен. Попробуйте позже.",
     "email_taken": "Этот email уже зарегистрирован. Попробуйте войти.",
-    "register_error": "Ошибка регистрации. Попробуйте ещё раз."
+    "register_error": "Ошибка регистрации. Попробуйте ещё раз.",
+    "forgot_password": "Забыли пароль?",
+    "forgot_password_title": "Восстановление пароля",
+    "forgot_password_subtitle": "Введите email — пришлём код для сброса пароля",
+    "send_reset_code": "Отправить код",
+    "reset_password_title": "Новый пароль",
+    "reset_password_subtitle": "Введите код из письма и задайте новый пароль",
+    "new_password": "Новый пароль",
+    "confirm_password": "Повторите пароль",
+    "set_new_password": "Сохранить новый пароль",
+    "passwords_dont_match": "Пароли не совпадают",
+    "password_reset_done_title": "Пароль изменён",
+    "password_reset_done_subtitle": "Теперь можно войти с новым паролем"
   },
   "verify": {
     "title": "Подтверждение почты",

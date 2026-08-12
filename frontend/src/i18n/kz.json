@@ -78,7 +78,19 @@
     "invalid_credentials": "Email немесе құпия сөз қате",
     "server_unavailable": "Сервер қолжетімсіз. Кейінірек көріңіз.",
     "email_taken": "Бұл email бұрын тіркелген. Кіруге тырысыңыз.",
-    "register_error": "Тіркелу қатесі. Қайталап көріңіз."
+    "register_error": "Тіркелу қатесі. Қайталап көріңіз.",
+    "forgot_password": "Құпия сөзді ұмыттыңыз ба?",
+    "forgot_password_title": "Құпия сөзді қалпына келтіру",
+    "forgot_password_subtitle": "Email енгізіңіз — құпия сөзді жаңарту кодын жібереміз",
+    "send_reset_code": "Кодты жіберу",
+    "reset_password_title": "Жаңа құпия сөз",
+    "reset_password_subtitle": "Хаттан алынған кодты енгізіп, жаңа құпия сөз орнатыңыз",
+    "new_password": "Жаңа құпия сөз",
+    "confirm_password": "Құпия сөзді қайталаңыз",
+    "set_new_password": "Жаңа құпия сөзді сақтау",
+    "passwords_dont_match": "Құпия сөздер сәйкес келмейді",
+    "password_reset_done_title": "Құпия сөз өзгертілді",
+    "password_reset_done_subtitle": "Енді жаңа құпия сөзбен кіре аласыз"
   },
   "verify": {
     "title": "Поштаны растау",

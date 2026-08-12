@@ -25,6 +25,12 @@ export const verifyEmail = (data: { email: string; code: string }) =>
 export const resendVerificationCode = (email: string) =>
   api.post('/resend-verification-code', { email })
 
+export const forgotPassword = (email: string) =>
+  api.post('/forgot-password', { email })
+
+export const resetPassword = (data: { email: string; code: string; new_password: string }) =>
+  api.post('/reset-password', data)
+
 export const getAllUsers = () => api.get('/users')
 
 export const updateUserRole = (id: number, role: string) =>

@@ -14,6 +14,7 @@ import (
 )
 
 const verificationCodeTTL = 15 * time.Minute
+const resetCodeTTL = 15 * time.Minute
 
 func generateVerificationCode() string {
 	b := make([]byte, 4)
@@ -159,6 +160,72 @@ func ResendVerificationCode(c *gin.Context) {
 	emailVerificationCode(user.Email, user.Name, code)
 
 	c.JSON(http.StatusOK, gin.H{"message": "Code resent"})
+}
+
+func ForgotPassword(c *gin.Context) {
+	var body struct {
+		Email string `json:"email"`
+	}
+	if err := c.ShouldBindJSON(&body); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	var user models.User
+	if err := config.DB.Where("email = ?", body.Email).First(&user).Error; err == nil {
+		code := generateVerificationCode()
+		expiresAt := time.Now().Add(resetCodeTTL)
+		config.DB.Model(&user).Updates(map[string]interface{}{
+			"reset_code":            code,
+			"reset_code_expires_at": expiresAt,
+		})
+		emailPasswordResetCode(user.Email, user.Name, code)
+	}
+
+	// Always respond the same way whether or not the email is registered,
+	// so this endpoint can't be used to check which emails have accounts.
+	c.JSON(http.StatusOK, gin.H{"message": "If this email is registered, a reset code has been sent"})
+}
+
+func ResetPassword(c *gin.Context) {
+	var body struct {
+		Email       string `json:"email"`
+		Code        string `json:"code"`
+		NewPassword string `json:"new_password" binding:"required,min=6"`
+	}
+	if err := c.ShouldBindJSON(&body); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	var user models.User
+	if err := config.DB.Where("email = ?", body.Email).First(&user).Error; err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid code"})
+		return
+	}
+	if user.ResetCode == "" || user.ResetCode != body.Code {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid code"})
+		return
+	}
+	if user.ResetCodeExpiresAt == nil || time.Now().After(*user.ResetCodeExpiresAt) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Code expired"})
+		return
+	}
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(body.NewPassword), 10)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash password"})
+		return
+	}
+
+	config.DB.Model(&user).Updates(map[string]interface{}{
+		"password":               string(hashedPassword),
+		"reset_code":             "",
+		"reset_code_expires_at":  nil,
+	})
+	emailPasswordChanged(user.Email, user.Name)
+
+	c.JSON(http.StatusOK, gin.H{"message": "Password updated"})
 }
 
 func Login(c *gin.Context) {

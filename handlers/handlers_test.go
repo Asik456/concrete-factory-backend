@@ -57,6 +57,8 @@ func TestMain(m *testing.M) {
 	r.POST("/login", handlers.Login)
 	r.POST("/verify-email", handlers.VerifyEmail)
 	r.POST("/resend-verification-code", handlers.ResendVerificationCode)
+	r.POST("/forgot-password", handlers.ForgotPassword)
+	r.POST("/reset-password", handlers.ResetPassword)
 	r.GET("/categories", handlers.GetCategories)
 	r.GET("/products", handlers.GetProducts)
 	r.GET("/products/:id", handlers.GetProductByID)
@@ -433,6 +435,105 @@ func TestBlockedUser_TokenRejectedImmediately(t *testing.T) {
 	testRouter.ServeHTTP(w2, req2)
 	if w2.Code != http.StatusForbidden {
 		t.Errorf("expected 403 after block, got %d: %s", w2.Code, w2.Body.String())
+	}
+}
+
+// Test 17a: forgot-password always responds 200, even for an email that
+// isn't registered — the endpoint must not leak which emails have accounts
+func TestForgotPassword_UnknownEmail_StillReturns200(t *testing.T) {
+	if config.DB == nil {
+		t.Skip("no database connection")
+	}
+	body, _ := json.Marshal(map[string]string{"email": "no_such_user@example.com"})
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest(http.MethodPost, "/forgot-password", bytes.NewBuffer(body))
+	req.Header.Set("Content-Type", "application/json")
+	testRouter.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("expected 200, got %d: %s", w.Code, w.Body.String())
+	}
+}
+
+// Test 17b: full forgot/reset-password flow — request a code, use it to set a
+// new password, then confirm the new password actually logs in
+func TestResetPassword_Success(t *testing.T) {
+	if config.DB == nil {
+		t.Skip("no database connection")
+	}
+	email := "reset_flow1@example.com"
+	createVerifiedUser(t, email, "customer")
+
+	body, _ := json.Marshal(map[string]string{"email": email})
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest(http.MethodPost, "/forgot-password", bytes.NewBuffer(body))
+	req.Header.Set("Content-Type", "application/json")
+	testRouter.ServeHTTP(w, req)
+	if w.Code != http.StatusOK {
+		t.Fatalf("forgot-password: expected 200, got %d: %s", w.Code, w.Body.String())
+	}
+
+	var user models.User
+	config.DB.Where("email = ?", email).First(&user)
+	if user.ResetCode == "" {
+		t.Fatal("expected reset_code to be set on the user")
+	}
+
+	resetBody, _ := json.Marshal(map[string]string{
+		"email": email, "code": user.ResetCode, "new_password": "newpass456",
+	})
+	w = httptest.NewRecorder()
+	req, _ = http.NewRequest(http.MethodPost, "/reset-password", bytes.NewBuffer(resetBody))
+	req.Header.Set("Content-Type", "application/json")
+	testRouter.ServeHTTP(w, req)
+	if w.Code != http.StatusOK {
+		t.Fatalf("reset-password: expected 200, got %d: %s", w.Code, w.Body.String())
+	}
+
+	// Old password must no longer work
+	oldLoginBody, _ := json.Marshal(map[string]string{"email": email, "password": "secret123"})
+	w = httptest.NewRecorder()
+	req, _ = http.NewRequest(http.MethodPost, "/login", bytes.NewBuffer(oldLoginBody))
+	req.Header.Set("Content-Type", "application/json")
+	testRouter.ServeHTTP(w, req)
+	if w.Code != http.StatusUnauthorized {
+		t.Errorf("expected old password to be rejected (401), got %d", w.Code)
+	}
+
+	// New password must work
+	newLoginBody, _ := json.Marshal(map[string]string{"email": email, "password": "newpass456"})
+	w = httptest.NewRecorder()
+	req, _ = http.NewRequest(http.MethodPost, "/login", bytes.NewBuffer(newLoginBody))
+	req.Header.Set("Content-Type", "application/json")
+	testRouter.ServeHTTP(w, req)
+	if w.Code != http.StatusOK {
+		t.Errorf("expected new password to work (200), got %d: %s", w.Code, w.Body.String())
+	}
+}
+
+// Test 17c: reset-password rejects a wrong code
+func TestResetPassword_InvalidCode(t *testing.T) {
+	if config.DB == nil {
+		t.Skip("no database connection")
+	}
+	email := "reset_flow2@example.com"
+	createVerifiedUser(t, email, "customer")
+
+	body, _ := json.Marshal(map[string]string{"email": email})
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest(http.MethodPost, "/forgot-password", bytes.NewBuffer(body))
+	req.Header.Set("Content-Type", "application/json")
+	testRouter.ServeHTTP(w, req)
+
+	resetBody, _ := json.Marshal(map[string]string{
+		"email": email, "code": "000000", "new_password": "whatever123",
+	})
+	w = httptest.NewRecorder()
+	req, _ = http.NewRequest(http.MethodPost, "/reset-password", bytes.NewBuffer(resetBody))
+	req.Header.Set("Content-Type", "application/json")
+	testRouter.ServeHTTP(w, req)
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected 400, got %d: %s", w.Code, w.Body.String())
 	}
 }
 

@@ -78,7 +78,19 @@
     "invalid_credentials": "Invalid email or password",
     "server_unavailable": "Server unavailable. Please try again later.",
     "email_taken": "This email is already registered. Try logging in.",
-    "register_error": "Registration failed. Please try again."
+    "register_error": "Registration failed. Please try again.",
+    "forgot_password": "Forgot password?",
+    "forgot_password_title": "Reset your password",
+    "forgot_password_subtitle": "Enter your email — we'll send you a reset code",
+    "send_reset_code": "Send Code",
+    "reset_password_title": "New Password",
+    "reset_password_subtitle": "Enter the code from the email and set a new password",
+    "new_password": "New Password",
+    "confirm_password": "Confirm Password",
+    "set_new_password": "Save New Password",
+    "passwords_dont_match": "Passwords don't match",
+    "password_reset_done_title": "Password Changed",
+    "password_reset_done_subtitle": "You can now log in with your new password"
   },
   "verify": {
     "title": "Verify Your Email",

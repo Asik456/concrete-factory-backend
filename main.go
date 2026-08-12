@@ -35,6 +35,8 @@ func main() {
 	r.POST("/login", handlers.Login)
 	r.POST("/verify-email", handlers.VerifyEmail)
 	r.POST("/resend-verification-code", handlers.ResendVerificationCode)
+	r.POST("/forgot-password", handlers.ForgotPassword)
+	r.POST("/reset-password", handlers.ResetPassword)
 	r.GET("/categories", handlers.GetCategories)
 	r.GET("/products", handlers.GetProducts)
 	r.GET("/products/:id", handlers.GetProductByID)

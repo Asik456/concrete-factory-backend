@@ -13,5 +13,7 @@ type User struct {
 	IsBlocked                 bool       `json:"is_blocked" gorm:"default:false"`
 	VerificationCode          string     `json:"-"`
 	VerificationCodeExpiresAt *time.Time `json:"-"`
+	ResetCode                 string     `json:"-"`
+	ResetCodeExpiresAt        *time.Time `json:"-"`
 	CreatedAt                 time.Time  `json:"created_at"`
 }

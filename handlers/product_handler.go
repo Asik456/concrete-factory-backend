@@ -10,7 +10,7 @@ import (
 
 func GetProducts(c *gin.Context) {
 	var products []models.Product
-	query := config.DB.Preload("Specs")
+	query := config.DB.Preload("Specs").Preload("Variants")
 	if categoryID := c.Query("category_id"); categoryID != "" {
 		query = query.Where("category_id = ?", categoryID)
 	}
@@ -28,7 +28,7 @@ func GetProducts(c *gin.Context) {
 func GetProductByID(c *gin.Context) {
 	id := c.Param("id")
 	var product models.Product
-	if err := config.DB.Preload("Specs").First(&product, id).Error; err != nil {
+	if err := config.DB.Preload("Specs").Preload("Variants").First(&product, id).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Product not found"})
 		return
 	}
@@ -37,35 +37,38 @@ func GetProductByID(c *gin.Context) {
 
 func CreateProduct(c *gin.Context) {
 	var body struct {
-		CategoryID    uint                 `json:"category_id"`
-		NameRu        string               `json:"name_ru"`
-		NameKz        string               `json:"name_kz"`
-		NameEn        string               `json:"name_en"`
-		DescriptionRu string               `json:"description_ru"`
-		DescriptionKz string               `json:"description_kz"`
-		DescriptionEn string               `json:"description_en"`
-		Price         float64              `json:"price"`
-		DiscountPrice *float64             `json:"discount_price"`
-		Image         string               `json:"image"`
-		IsActive      bool                 `json:"is_active"`
-		Specs         []models.ProductSpec `json:"specs"`
+		CategoryID     uint                    `json:"category_id"`
+		NameRu         string                  `json:"name_ru"`
+		NameKz         string                  `json:"name_kz"`
+		NameEn         string                  `json:"name_en"`
+		DescriptionRu  string                  `json:"description_ru"`
+		DescriptionKz  string                  `json:"description_kz"`
+		DescriptionEn  string                  `json:"description_en"`
+		Price          float64                 `json:"price"`
+		DiscountPrice  *float64                `json:"discount_price"`
+		PriceWholesale *float64                `json:"price_wholesale"`
+		Image          string                  `json:"image"`
+		IsActive       bool                    `json:"is_active"`
+		Specs          []models.ProductSpec    `json:"specs"`
+		Variants       []models.ProductVariant `json:"variants"`
 	}
 	if err := c.ShouldBindJSON(&body); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 	product := models.Product{
-		CategoryID:    body.CategoryID,
-		NameRu:        body.NameRu,
-		NameKz:        body.NameKz,
-		NameEn:        body.NameEn,
-		DescriptionRu: body.DescriptionRu,
-		DescriptionKz: body.DescriptionKz,
-		DescriptionEn: body.DescriptionEn,
-		Price:         body.Price,
-		DiscountPrice: body.DiscountPrice,
-		Image:         body.Image,
-		IsActive:      body.IsActive,
+		CategoryID:     body.CategoryID,
+		NameRu:         body.NameRu,
+		NameKz:         body.NameKz,
+		NameEn:         body.NameEn,
+		DescriptionRu:  body.DescriptionRu,
+		DescriptionKz:  body.DescriptionKz,
+		DescriptionEn:  body.DescriptionEn,
+		Price:          body.Price,
+		DiscountPrice:  body.DiscountPrice,
+		PriceWholesale: body.PriceWholesale,
+		Image:          body.Image,
+		IsActive:       body.IsActive,
 	}
 	if err := config.DB.Create(&product).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -79,6 +82,14 @@ func CreateProduct(c *gin.Context) {
 		config.DB.Create(&body.Specs)
 		product.Specs = body.Specs
 	}
+	if len(body.Variants) > 0 {
+		for i := range body.Variants {
+			body.Variants[i].ProductID = product.ID
+			body.Variants[i].ID = 0
+		}
+		config.DB.Create(&body.Variants)
+		product.Variants = body.Variants
+	}
 	c.JSON(http.StatusCreated, product)
 }
 
@@ -90,18 +101,20 @@ func UpdateProduct(c *gin.Context) {
 		return
 	}
 	var body struct {
-		CategoryID    uint                 `json:"category_id"`
-		NameRu        string               `json:"name_ru"`
-		NameKz        string               `json:"name_kz"`
-		NameEn        string               `json:"name_en"`
-		DescriptionRu string               `json:"description_ru"`
-		DescriptionKz string               `json:"description_kz"`
-		DescriptionEn string               `json:"description_en"`
-		Price         float64              `json:"price"`
-		DiscountPrice *float64             `json:"discount_price"`
-		Image         string               `json:"image"`
-		IsActive      bool                 `json:"is_active"`
-		Specs         []models.ProductSpec `json:"specs"`
+		CategoryID     uint                    `json:"category_id"`
+		NameRu         string                  `json:"name_ru"`
+		NameKz         string                  `json:"name_kz"`
+		NameEn         string                  `json:"name_en"`
+		DescriptionRu  string                  `json:"description_ru"`
+		DescriptionKz  string                  `json:"description_kz"`
+		DescriptionEn  string                  `json:"description_en"`
+		Price          float64                 `json:"price"`
+		DiscountPrice  *float64                `json:"discount_price"`
+		PriceWholesale *float64                `json:"price_wholesale"`
+		Image          string                  `json:"image"`
+		IsActive       bool                    `json:"is_active"`
+		Specs          []models.ProductSpec    `json:"specs"`
+		Variants       []models.ProductVariant `json:"variants"`
 	}
 	if err := c.ShouldBindJSON(&body); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -116,6 +129,7 @@ func UpdateProduct(c *gin.Context) {
 	product.DescriptionEn = body.DescriptionEn
 	product.Price = body.Price
 	product.DiscountPrice = body.DiscountPrice
+	product.PriceWholesale = body.PriceWholesale
 	product.Image = body.Image
 	product.IsActive = body.IsActive
 	config.DB.Save(&product)
@@ -130,6 +144,17 @@ func UpdateProduct(c *gin.Context) {
 			config.DB.Create(&body.Specs)
 		}
 		product.Specs = body.Specs
+	}
+	if body.Variants != nil {
+		config.DB.Where("product_id = ?", product.ID).Delete(&models.ProductVariant{})
+		for i := range body.Variants {
+			body.Variants[i].ProductID = product.ID
+			body.Variants[i].ID = 0
+		}
+		if len(body.Variants) > 0 {
+			config.DB.Create(&body.Variants)
+		}
+		product.Variants = body.Variants
 	}
 	c.JSON(http.StatusOK, product)
 }

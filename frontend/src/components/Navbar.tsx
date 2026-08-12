@@ -1,13 +1,11 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../store/AuthContext'
-import { useCart } from '../store/CartContext'
 import LanguageSwitcher from './LanguageSwitcher'
 
 export default function Navbar() {
   const { t } = useTranslation()
   const { user, logout, isAdmin } = useAuth()
-  const { count } = useCart()
   const navigate = useNavigate()
 
   const handleLogout = () => {
@@ -29,9 +27,6 @@ export default function Navbar() {
             <Link to="/catalog" className="hover:text-yellow-400 transition text-sm">{t('nav.catalog')}</Link>
             <Link to="/about" className="hover:text-yellow-400 transition text-sm">{t('nav.about')}</Link>
             <Link to="/contact" className="hover:text-yellow-400 transition text-sm">{t('nav.contact')}</Link>
-            {user && (
-              <Link to="/my-orders" className="hover:text-yellow-400 transition text-sm">{t('nav.my_orders')}</Link>
-            )}
             {isAdmin && (
               <Link to="/admin/products" className="hover:text-yellow-400 transition text-sm text-yellow-300">{t('nav.admin')}</Link>
             )}
@@ -39,15 +34,6 @@ export default function Navbar() {
 
           <div className="flex items-center gap-4">
             <LanguageSwitcher />
-
-            <Link to="/cart" className="relative hover:text-yellow-400 transition">
-              <span className="text-xl">🛒</span>
-              {count > 0 && (
-                <span className="absolute -top-2 -right-2 bg-yellow-400 text-gray-900 text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
-                  {count}
-                </span>
-              )}
-            </Link>
 
             {user ? (
               <div className="flex items-center gap-3">

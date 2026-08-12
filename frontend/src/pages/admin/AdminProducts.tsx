@@ -1,13 +1,16 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Product, Category, ProductSpec } from '../../types'
+import { Product, Category, ProductSpec, ProductVariant, ColorKey } from '../../types'
 import { getProducts, getCategories, createProduct, updateProduct, deleteProduct } from '../../api'
+
+const COLOR_OPTIONS: ColorKey[] = ['grey', 'red', 'black']
 
 const emptyForm = {
   category_id: 0, name_ru: '', name_kz: '', name_en: '',
   description_ru: '', description_kz: '', description_en: '',
-  price: 0, discount_price: '', image: '', is_active: true,
+  price: 0, discount_price: '', price_wholesale: '', image: '', is_active: true,
   specs: [] as ProductSpec[],
+  variants: [] as ProductVariant[],
 }
 
 export default function AdminProducts() {
@@ -33,12 +36,21 @@ export default function AdminProducts() {
   }
   const removeSpec = (i: number) => setForm({ ...form, specs: form.specs.filter((_, idx) => idx !== i) })
 
+  const addVariant = () => setForm({ ...form, variants: [...form.variants, { color_key: 'grey', price: 0 }] })
+  const updateVariant = (i: number, field: 'color_key' | 'price', val: string) => {
+    const variants = [...form.variants]
+    variants[i] = { ...variants[i], [field]: field === 'price' ? Number(val) : (val as ColorKey) }
+    setForm({ ...form, variants })
+  }
+  const removeVariant = (i: number) => setForm({ ...form, variants: form.variants.filter((_, idx) => idx !== i) })
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     const payload = {
       ...form,
       price: Number(form.price),
       discount_price: form.discount_price ? Number(form.discount_price) : null,
+      price_wholesale: form.price_wholesale ? Number(form.price_wholesale) : null,
       category_id: Number(form.category_id),
     }
     if (editingId) {
@@ -59,8 +71,10 @@ export default function AdminProducts() {
       description_ru: p.description_ru, description_kz: p.description_kz, description_en: p.description_en,
       price: p.price,
       discount_price: p.discount_price ? String(p.discount_price) : '',
+      price_wholesale: p.price_wholesale ? String(p.price_wholesale) : '',
       image: p.image, is_active: p.is_active,
       specs: p.specs || [],
+      variants: p.variants || [],
     })
     setEditingId(p.id)
     setShowForm(true)
@@ -97,7 +111,7 @@ export default function AdminProducts() {
                   onChange={(e) => setForm({ ...form, category_id: Number(e.target.value) })}
                   className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-yellow-400"
                 >
-                  <option value={0}>-- выберите --</option>
+                  <option value={0}>{t('admin.select_category')}</option>
                   {categories.map((c) => (
                     <option key={c.id} value={c.id}>{c.name_ru}</option>
                   ))}
@@ -161,6 +175,41 @@ export default function AdminProducts() {
                 <input type="url" value={form.image}
                   onChange={(e) => setForm({ ...form, image: e.target.value })}
                   className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-yellow-400" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('admin.price_wholesale')}</label>
+                <input type="number" min="0" value={form.price_wholesale}
+                  onChange={(e) => setForm({ ...form, price_wholesale: e.target.value })}
+                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-yellow-400" />
+              </div>
+            </div>
+
+            {/* Variants */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-sm font-medium text-gray-700">{t('admin.variants')}</label>
+                <button type="button" onClick={addVariant}
+                  className="text-xs bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded-lg transition">
+                  + {t('admin.add_variant')}
+                </button>
+              </div>
+              <div className="space-y-2">
+                {form.variants.map((v, i) => (
+                  <div key={i} className="flex gap-2">
+                    <select value={v.color_key}
+                      onChange={(e) => updateVariant(i, 'color_key', e.target.value)}
+                      className="flex-1 px-3 py-2 border rounded-lg text-sm focus:outline-none focus:border-yellow-400">
+                      {COLOR_OPTIONS.map((c) => (
+                        <option key={c} value={c}>{t(`product.color_${c}`)}</option>
+                      ))}
+                    </select>
+                    <input type="number" min="0" placeholder={t('admin.price')} value={v.price}
+                      onChange={(e) => updateVariant(i, 'price', e.target.value)}
+                      className="flex-1 px-3 py-2 border rounded-lg text-sm focus:outline-none focus:border-yellow-400" />
+                    <button type="button" onClick={() => removeVariant(i)}
+                      className="text-red-400 hover:text-red-600 px-2">✕</button>
+                  </div>
+                ))}
               </div>
             </div>
 

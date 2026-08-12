@@ -21,10 +21,15 @@ export default function Login() {
       authLogin(res.data.token, res.data.user)
       navigate('/')
     } catch (err: any) {
-      if (err?.code === 'ERR_NETWORK') {
-        setError('Сервер недоступен. Убедитесь что docker-compose up запущен.')
+      const code = err?.response?.data?.error
+      if (code === 'email_not_verified') {
+        navigate(`/verify-email?email=${encodeURIComponent(form.email)}`)
+      } else if (code === 'account_blocked') {
+        setError(t('auth.account_blocked'))
+      } else if (err?.code === 'ERR_NETWORK') {
+        setError(t('auth.server_unavailable'))
       } else {
-        setError('Неверный email или пароль')
+        setError(t('auth.invalid_credentials'))
       }
     } finally {
       setLoading(false)

@@ -1,7 +1,8 @@
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Product, Language } from '../types'
-import { useCart } from '../store/CartContext'
+import { buildWhatsAppOrderLink } from '../utils/whatsapp'
+import { COLOR_HEX } from '../utils/colors'
 
 interface Props {
   product: Product
@@ -9,12 +10,17 @@ interface Props {
 
 export default function ProductCard({ product }: Props) {
   const { t, i18n } = useTranslation()
-  const { addToCart } = useCart()
   const lang = i18n.language as Language
 
   const name = product[`name_${lang}` as keyof Product] as string || product.name_ru
 
   const hasDiscount = product.discount_price && product.discount_price > 0
+  const waLink = buildWhatsAppOrderLink(product, lang)
+
+  const variants = product.variants || []
+  const hasVariants = variants.length > 1
+  const minPrice = hasVariants ? Math.min(...variants.map((v) => v.price)) : product.price
+  const maxPrice = hasVariants ? Math.max(...variants.map((v) => v.price)) : product.price
 
   return (
     <div className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition group">
@@ -39,8 +45,25 @@ export default function ProductCard({ product }: Props) {
           </h3>
         </Link>
 
-        <div className="flex items-center gap-2 mb-3">
-          {hasDiscount ? (
+        {hasVariants && (
+          <div className="flex items-center gap-1.5 mb-2">
+            {variants.map((v) => (
+              <span
+                key={v.color_key}
+                title={t(`product.color_${v.color_key}`)}
+                className="w-4 h-4 rounded-full border border-gray-300"
+                style={{ backgroundColor: COLOR_HEX[v.color_key] }}
+              />
+            ))}
+          </div>
+        )}
+
+        <div className="flex items-center gap-2 mb-1 flex-wrap">
+          {hasVariants ? (
+            <span className="text-xl font-bold text-gray-900">
+              {minPrice.toLocaleString()}–{maxPrice.toLocaleString()} тг
+            </span>
+          ) : hasDiscount ? (
             <>
               <span className="text-xl font-bold text-red-600">
                 {product.discount_price?.toLocaleString()} тг
@@ -58,13 +81,20 @@ export default function ProductCard({ product }: Props) {
             </span>
           )}
         </div>
+        {product.price_wholesale != null && (
+          <div className="text-xs text-gray-500 mb-2">
+            {t('product.price_wholesale')}: {product.price_wholesale.toLocaleString()} тг
+          </div>
+        )}
 
-        <button
-          onClick={() => addToCart(product)}
-          className="w-full bg-yellow-400 hover:bg-yellow-300 text-gray-900 font-semibold py-2 rounded-lg transition text-sm"
+        <a
+          href={waLink}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block w-full text-center bg-green-500 hover:bg-green-600 text-white font-semibold py-2 rounded-lg transition text-sm mt-2"
         >
-          {t('product.add_to_cart')}
-        </button>
+          {t('product.order_whatsapp')}
+        </a>
       </div>
     </div>
   )

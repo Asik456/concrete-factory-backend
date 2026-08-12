@@ -4,6 +4,9 @@ export interface User {
   email: string
   phone: string
   role: 'customer' | 'admin'
+  is_verified?: boolean
+  is_blocked?: boolean
+  created_at?: string
 }
 
 export interface Category {
@@ -21,6 +24,15 @@ export interface ProductSpec {
   value: string
 }
 
+export type ColorKey = 'grey' | 'red' | 'black'
+
+export interface ProductVariant {
+  id?: number
+  product_id?: number
+  color_key: ColorKey
+  price: number
+}
+
 export interface Product {
   id: number
   category_id: number
@@ -32,30 +44,11 @@ export interface Product {
   description_en: string
   price: number
   discount_price?: number
+  price_wholesale?: number
   image: string
   is_active: boolean
   specs?: ProductSpec[]
-}
-
-export interface OrderItem {
-  id: number
-  order_id: number
-  product_id: number
-  quantity: number
-  price_at_order: number
-}
-
-export interface Order {
-  id: number
-  user_id: number
-  status: string
-  payment_status: string
-  delivery_type: string
-  delivery_address: string
-  delivery_cost: number
-  total: number
-  items?: OrderItem[]
-  created_at: string
+  variants?: ProductVariant[]
 }
 
 export interface Inquiry {
@@ -65,11 +58,6 @@ export interface Inquiry {
   message: string
   is_read: boolean
   created_at: string
-}
-
-export interface CartItem {
-  product: Product
-  quantity: number
 }
 
 export type Language = 'ru' | 'kz' | 'en'

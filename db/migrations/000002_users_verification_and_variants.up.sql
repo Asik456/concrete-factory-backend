@@ -1,0 +1,15 @@
+ALTER TABLE users
+    ADD COLUMN IF NOT EXISTS is_verified BOOLEAN DEFAULT FALSE,
+    ADD COLUMN IF NOT EXISTS is_blocked BOOLEAN DEFAULT FALSE,
+    ADD COLUMN IF NOT EXISTS verification_code VARCHAR(10),
+    ADD COLUMN IF NOT EXISTS verification_code_expires_at TIMESTAMP;
+
+ALTER TABLE products
+    ADD COLUMN IF NOT EXISTS price_wholesale NUMERIC(10,2);
+
+CREATE TABLE IF NOT EXISTS product_variants (
+    id SERIAL PRIMARY KEY,
+    product_id INTEGER REFERENCES products(id) ON DELETE CASCADE,
+    color_key VARCHAR(20) NOT NULL,
+    price NUMERIC(10,2) NOT NULL
+);

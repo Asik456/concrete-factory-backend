@@ -67,7 +67,7 @@ export default function Catalog() {
         <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-lg">🔍</span>
         <input
           type="text"
-          placeholder="Поиск по названию товара..."
+          placeholder={t('catalog.search_placeholder')}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:border-yellow-400 bg-white shadow-sm text-sm"
@@ -115,7 +115,7 @@ export default function Catalog() {
               onChange={(e) => setOnlyDiscount(e.target.checked)}
               className="w-4 h-4 accent-yellow-400"
             />
-            <span className="text-sm text-gray-700">🔥 Только акции</span>
+            <span className="text-sm text-gray-700">🔥 {t('catalog.only_discount')}</span>
           </label>
 
           {/* Sort */}
@@ -124,10 +124,10 @@ export default function Catalog() {
             onChange={(e) => setSort(e.target.value as SortOption)}
             className="text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-yellow-400 bg-white"
           >
-            <option value="default">По умолчанию</option>
-            <option value="price_asc">Цена: по возрастанию</option>
-            <option value="price_desc">Цена: по убыванию</option>
-            <option value="discount">Сначала акции</option>
+            <option value="default">{t('catalog.sort_default')}</option>
+            <option value="price_asc">{t('catalog.sort_price_asc')}</option>
+            <option value="price_desc">{t('catalog.sort_price_desc')}</option>
+            <option value="discount">{t('catalog.sort_discount')}</option>
           </select>
         </div>
       </div>
@@ -141,7 +141,7 @@ export default function Catalog() {
       {/* Results count */}
       {!loading && (
         <p className="text-sm text-gray-500 mb-4">
-          {filtered.length > 0 ? `Найдено: ${filtered.length} товаров` : ''}
+          {filtered.length > 0 ? t('catalog.found_count', { count: filtered.length }) : ''}
         </p>
       )}
 
@@ -153,7 +153,7 @@ export default function Catalog() {
           <p className="text-gray-500 text-lg">{t('catalog.no_products')}</p>
           {search && (
             <button onClick={() => setSearch('')} className="mt-4 text-yellow-600 hover:text-yellow-700 font-medium">
-              Сбросить поиск
+              {t('catalog.reset_search')}
             </button>
           )}
         </div>

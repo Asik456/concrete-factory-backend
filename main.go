@@ -7,9 +7,13 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 )
 
 func main() {
+	// .env is optional — if absent, ConnectDB falls back to its built-in defaults.
+	_ = godotenv.Load()
+
 	config.ConnectDB()
 
 	r := gin.Default()
@@ -28,6 +32,8 @@ func main() {
 	// Public
 	r.POST("/register", handlers.Register)
 	r.POST("/login", handlers.Login)
+	r.POST("/verify-email", handlers.VerifyEmail)
+	r.POST("/resend-verification-code", handlers.ResendVerificationCode)
 	r.GET("/categories", handlers.GetCategories)
 	r.GET("/products", handlers.GetProducts)
 	r.GET("/products/:id", handlers.GetProductByID)
@@ -41,9 +47,6 @@ func main() {
 	auth.Use(middleware.AuthMiddleware())
 	{
 		auth.GET("/me", handlers.GetMe)
-		auth.POST("/orders", handlers.CreateOrder)
-		auth.GET("/my-orders", handlers.GetMyOrders)
-		auth.POST("/payment/checkout", handlers.Checkout)
 		auth.POST("/notify", handlers.SendNotification)
 
 		// Admin
@@ -51,6 +54,8 @@ func main() {
 		admin.Use(middleware.AdminMiddleware())
 		{
 			admin.GET("/users", handlers.GetAllUsers)
+			admin.PUT("/users/:id/role", handlers.UpdateUserRole)
+			admin.PUT("/users/:id/block", handlers.UpdateUserBlock)
 
 			admin.POST("/categories", handlers.CreateCategory)
 			admin.PUT("/categories/:id", handlers.UpdateCategory)
@@ -59,9 +64,6 @@ func main() {
 			admin.POST("/products", handlers.CreateProduct)
 			admin.PUT("/products/:id", handlers.UpdateProduct)
 			admin.DELETE("/products/:id", handlers.DeleteProduct)
-
-			admin.GET("/orders", handlers.GetOrders)
-			admin.PUT("/orders/:id/status", handlers.UpdateOrderStatus)
 
 			admin.GET("/inquiries", handlers.GetInquiries)
 			admin.PUT("/inquiries/:id/read", handlers.MarkInquiryRead)

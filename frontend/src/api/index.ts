@@ -19,7 +19,19 @@ export const login = (data: { email: string; password: string }) =>
 
 export const getMe = () => api.get('/me')
 
+export const verifyEmail = (data: { email: string; code: string }) =>
+  api.post('/verify-email', data)
+
+export const resendVerificationCode = (email: string) =>
+  api.post('/resend-verification-code', { email })
+
 export const getAllUsers = () => api.get('/users')
+
+export const updateUserRole = (id: number, role: string) =>
+  api.put(`/users/${id}/role`, { role })
+
+export const updateUserBlock = (id: number, is_blocked: boolean) =>
+  api.put(`/users/${id}/block`, { is_blocked })
 
 // Categories
 export const getCategories = () => api.get('/categories')
@@ -41,20 +53,6 @@ export const createProduct = (data: object) => api.post('/products', data)
 export const updateProduct = (id: number, data: object) => api.put(`/products/${id}`, data)
 
 export const deleteProduct = (id: number) => api.delete(`/products/${id}`)
-
-// Orders
-export const createOrder = (data: object) => api.post('/orders', data)
-
-export const getMyOrders = () => api.get('/my-orders')
-
-export const getAllOrders = () => api.get('/orders')
-
-export const updateOrderStatus = (id: number, status: string) =>
-  api.put(`/orders/${id}/status`, { status })
-
-// Payment
-export const checkout = (order_id: number, method: string) =>
-  api.post('/payment/checkout', { order_id, method })
 
 // Inquiries
 export const createInquiry = (data: object) => api.post('/inquiries', data)

@@ -5,6 +5,9 @@ import (
 	"os"
 	"strings"
 
+	"concrete-factory-backend/config"
+	"concrete-factory-backend/models"
+
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 )
@@ -44,6 +47,15 @@ func AuthMiddleware() gin.HandlerFunc {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token claims"})
 			c.Abort()
 			return
+		}
+
+		if userID, ok := claims["userID"].(float64); ok {
+			var user models.User
+			if err := config.DB.Select("is_blocked").First(&user, uint(userID)).Error; err == nil && user.IsBlocked {
+				c.JSON(http.StatusForbidden, gin.H{"error": "account_blocked"})
+				c.Abort()
+				return
+			}
 		}
 
 		c.Set("userID", claims["userID"])

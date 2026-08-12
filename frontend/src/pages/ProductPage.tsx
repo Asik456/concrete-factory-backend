@@ -1,23 +1,27 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { Product, Language } from '../types'
+import { Product, Language, ColorKey } from '../types'
 import { getProductById } from '../api'
-import { useCart } from '../store/CartContext'
+import { buildWhatsAppOrderLink } from '../utils/whatsapp'
+import { COLOR_HEX } from '../utils/colors'
 
 export default function ProductPage() {
   const { id } = useParams<{ id: string }>()
   const { t, i18n } = useTranslation()
   const lang = i18n.language as Language
-  const { addToCart } = useCart()
   const [product, setProduct] = useState<Product | null>(null)
-  const [quantity, setQuantity] = useState(1)
-  const [added, setAdded] = useState(false)
+  const [selectedColor, setSelectedColor] = useState<ColorKey | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     getProductById(Number(id))
-      .then((res) => setProduct(res.data))
+      .then((res) => {
+        setProduct(res.data)
+        if (res.data.variants?.length > 0) {
+          setSelectedColor(res.data.variants[0].color_key)
+        }
+      })
       .finally(() => setLoading(false))
   }, [id])
 
@@ -27,13 +31,11 @@ export default function ProductPage() {
   const name = product[`name_${lang}` as keyof Product] as string || product.name_ru
   const description = product[`description_${lang}` as keyof Product] as string || product.description_ru
   const hasDiscount = product.discount_price && product.discount_price > 0
-  const currentPrice = hasDiscount ? product.discount_price! : product.price
 
-  const handleAddToCart = () => {
-    addToCart(product, quantity)
-    setAdded(true)
-    setTimeout(() => setAdded(false), 2000)
-  }
+  const selectedVariant = product.variants?.find((v) => v.color_key === selectedColor)
+  const currentPrice = selectedVariant ? selectedVariant.price : (hasDiscount ? product.discount_price! : product.price)
+
+  const waLink = buildWhatsAppOrderLink(product, lang, selectedVariant?.color_key)
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-10">
@@ -55,8 +57,8 @@ export default function ProductPage() {
         <div>
           <h1 className="text-3xl font-bold text-gray-900 mb-4">{name}</h1>
 
-          <div className="flex items-center gap-3 mb-6">
-            {hasDiscount ? (
+          <div className="flex items-center gap-3 mb-1 flex-wrap">
+            {!selectedVariant && hasDiscount ? (
               <>
                 <span className="text-3xl font-bold text-red-600">
                   {product.discount_price?.toLocaleString()} тг
@@ -70,10 +72,35 @@ export default function ProductPage() {
               </>
             ) : (
               <span className="text-3xl font-bold text-gray-900">
-                {product.price.toLocaleString()} тг
+                {currentPrice.toLocaleString()} тг
               </span>
             )}
           </div>
+          {product.price_wholesale != null && (
+            <div className="text-sm text-gray-500 mb-4">
+              {t('product.price_wholesale')}: {product.price_wholesale.toLocaleString()} тг
+            </div>
+          )}
+
+          {/* Color variants */}
+          {product.variants && product.variants.length > 0 && (
+            <div className="mb-6">
+              <h3 className="font-semibold text-gray-900 mb-3">{t('product.color')}</h3>
+              <div className="flex gap-3">
+                {product.variants.map((v) => (
+                  <button
+                    key={v.color_key}
+                    onClick={() => setSelectedColor(v.color_key)}
+                    title={t(`product.color_${v.color_key}`)}
+                    className={`w-9 h-9 rounded-full border-2 transition ${
+                      selectedColor === v.color_key ? 'border-yellow-500 scale-110' : 'border-gray-200'
+                    }`}
+                    style={{ backgroundColor: COLOR_HEX[v.color_key] }}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Specs */}
           {product.specs && product.specs.length > 0 && (
@@ -101,31 +128,14 @@ export default function ProductPage() {
             </div>
           )}
 
-          {/* Quantity + Cart */}
-          <div className="flex items-center gap-4 mt-6">
-            <div className="flex items-center border rounded-lg overflow-hidden">
-              <button
-                onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-lg font-bold transition"
-              >−</button>
-              <span className="px-6 py-2 font-semibold">{quantity}</span>
-              <button
-                onClick={() => setQuantity(quantity + 1)}
-                className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-lg font-bold transition"
-              >+</button>
-            </div>
-
-            <button
-              onClick={handleAddToCart}
-              className={`flex-1 py-3 rounded-lg font-bold text-lg transition ${
-                added
-                  ? 'bg-green-500 text-white'
-                  : 'bg-yellow-400 hover:bg-yellow-300 text-gray-900'
-              }`}
-            >
-              {added ? '✓ Добавлено!' : t('product.add_to_cart')}
-            </button>
-          </div>
+          <a
+            href={waLink}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block w-full text-center bg-green-500 hover:bg-green-600 text-white font-bold text-lg py-3 rounded-lg transition"
+          >
+            {t('product.order_whatsapp')}
+          </a>
 
           <div className="mt-4 text-sm text-green-600 font-medium">
             ✓ {t('product.in_stock')}

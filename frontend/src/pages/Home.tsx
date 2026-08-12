@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { Category, Product, Language } from '../types'
 import { getCategories, getProducts, createInquiry } from '../api'
 import ProductCard from '../components/ProductCard'
+import { formatKzPhone } from '../utils/phone'
 
 export default function Home() {
   const { t, i18n } = useTranslation()
@@ -30,17 +31,11 @@ export default function Home() {
   }
 
   const categoryIcons: Record<string, string> = {
-    'splitter-blocks': '🧱',
-    'concrete-rings': '⭕',
-    'liquid-concrete': '🪣',
+    'well-rings': '⭕',
+    'well-cover-plates': '▬',
+    'well-bottom-plates': '⬛',
+    'blocks-columns': '🧱',
   }
-
-  const stats = [
-    { value: '14+', label: 'лет на рынке' },
-    { value: '500+', label: 'клиентов' },
-    { value: '1000+', label: 'реализованных проектов' },
-    { value: '50+', label: 'видов продукции' },
-  ]
 
   return (
     <div>
@@ -52,14 +47,14 @@ export default function Home() {
         />
         <div className="relative max-w-6xl mx-auto px-4 py-28 text-center">
           <div className="inline-block bg-yellow-400 text-gray-900 text-xs font-bold px-4 py-1.5 rounded-full mb-6 uppercase tracking-wider">
-            🏭 Завод в Алматы · Прямые цены
+            {t('home.badge')}
           </div>
           <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight">
-            <span className="text-yellow-400">JBI Beton</span><br />
-            Бетонные изделия<br />высшего качества
+            <span className="text-yellow-400">JSI Beton</span><br />
+            {t('home.hero_title')}
           </h1>
           <p className="text-lg md:text-xl text-gray-300 mb-10 max-w-2xl mx-auto">
-            Производим и доставляем бетонные блоки, кольца и раствор прямо с завода в Алматы. Без посредников.
+            {t('home.hero_subtitle')}
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
@@ -78,26 +73,12 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Stats */}
-      <section className="bg-yellow-400 py-10">
-        <div className="max-w-5xl mx-auto px-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
-            {stats.map((s) => (
-              <div key={s.label}>
-                <div className="text-4xl font-black text-gray-900">{s.value}</div>
-                <div className="text-sm font-medium text-gray-700 mt-1">{s.label}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* Categories */}
       <section className="py-16 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-gray-900 mb-3">{t('home.categories_title')}</h2>
-            <p className="text-gray-500 max-w-xl mx-auto">Весь ассортимент доступен к заказу с доставкой по Алматы и области</p>
+            <p className="text-gray-500 max-w-xl mx-auto">{t('home.categories_subtitle')}</p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {categories.map((cat) => {
@@ -116,7 +97,7 @@ export default function Home() {
                       {name}
                     </h3>
                     <span className="text-yellow-500 text-sm font-medium">
-                      Смотреть товары →
+                      {t('home.view_products')} →
                     </span>
                   </div>
                 </Link>
@@ -132,11 +113,11 @@ export default function Home() {
           <div className="max-w-7xl mx-auto px-4">
             <div className="flex items-center justify-between mb-10">
               <div>
-                <h2 className="text-3xl font-bold text-gray-900">🔥 Акции и скидки</h2>
-                <p className="text-gray-500 mt-1">Успейте купить по сниженным ценам</p>
+                <h2 className="text-3xl font-bold text-gray-900">🔥 {t('home.sale_title')}</h2>
+                <p className="text-gray-500 mt-1">{t('home.sale_subtitle')}</p>
               </div>
               <Link to="/catalog" className="text-yellow-600 hover:text-yellow-700 font-semibold text-sm">
-                Все товары →
+                {t('home.all_products')} →
               </Link>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -152,17 +133,16 @@ export default function Home() {
       <section className="py-16 bg-gray-900 text-white">
         <div className="max-w-7xl mx-auto px-4">
           <h2 className="text-3xl font-bold text-center mb-12">{t('home.why_title')}</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[
-              { icon: '🏭', title: 'Собственный завод', text: 'Производим сами — цены без наценок посредников' },
-              { icon: '🚚', title: 'Доставка по Алматы', text: 'Собственный автопарк. Привезём в нужное место и время' },
-              { icon: '✅', title: 'Гарантия качества', text: 'Соответствие ГОСТ. Продукция проходит лабораторный контроль' },
-              { icon: '💰', title: 'Выгодные цены', text: 'Оптовые скидки для строительных компаний и ИП' },
+              { icon: '🏭', titleKey: 'home.why_1_title', textKey: 'home.why_1_text' },
+              { icon: '🚚', titleKey: 'home.why_2_title', textKey: 'home.why_2_text' },
+              { icon: '✅', titleKey: 'home.why_3_title', textKey: 'home.why_3_text' },
             ].map((item) => (
-              <div key={item.title} className="bg-gray-800 rounded-2xl p-6 text-center hover:bg-gray-750 transition">
+              <div key={item.titleKey} className="bg-gray-800 rounded-2xl p-6 text-center hover:bg-gray-750 transition">
                 <div className="text-5xl mb-4">{item.icon}</div>
-                <h3 className="text-lg font-semibold text-yellow-400 mb-2">{item.title}</h3>
-                <p className="text-gray-400 text-sm">{item.text}</p>
+                <h3 className="text-lg font-semibold text-yellow-400 mb-2">{t(item.titleKey)}</h3>
+                <p className="text-gray-400 text-sm">{t(item.textKey)}</p>
               </div>
             ))}
           </div>
@@ -179,41 +159,14 @@ export default function Home() {
               onClick={() => setShowInquiry(true)}
               className="bg-gray-900 hover:bg-gray-800 text-white font-bold px-10 py-4 rounded-xl text-lg transition shadow-lg"
             >
-              📞 Заказать звонок
+              📞 {t('home.inquiry_btn')}
             </button>
             <Link
               to="/contact"
               className="bg-white hover:bg-gray-50 text-gray-900 font-bold px-10 py-4 rounded-xl text-lg transition shadow-lg"
             >
-              📍 Наши контакты
+              📍 {t('home.our_contacts')}
             </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* Testimonials */}
-      <section className="py-16 bg-gray-50">
-        <div className="max-w-6xl mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center text-gray-900 mb-12">Отзывы клиентов</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {[
-              { name: 'Асан Бекжанов', role: 'Прораб, ТОО "СтройМастер"', text: 'Заказываем бетонные блоки уже 3 года. Качество стабильное, доставка всегда вовремя. Рекомендую!', stars: 5 },
-              { name: 'Дмитрий Ковалёв', role: 'Частный застройщик', text: 'Строил дом — брал кольца для колодца и блоки для фундамента. Цены честные, без накруток.', stars: 5 },
-              { name: 'Айгуль Нурланова', role: 'Менеджер ТОО "Алмас Курылыс"', text: 'Оперативно отвечают, быстро оформляют заказ. Бетон М300 отличного качества.', stars: 5 },
-            ].map((review) => (
-              <div key={review.name} className="bg-white rounded-2xl shadow-sm p-6">
-                <div className="flex mb-3">
-                  {Array.from({ length: review.stars }).map((_, i) => (
-                    <span key={i} className="text-yellow-400 text-xl">★</span>
-                  ))}
-                </div>
-                <p className="text-gray-700 text-sm mb-4 italic">"{review.text}"</p>
-                <div>
-                  <div className="font-semibold text-gray-900">{review.name}</div>
-                  <div className="text-gray-500 text-xs">{review.role}</div>
-                </div>
-              </div>
-            ))}
           </div>
         </div>
       </section>
@@ -238,7 +191,11 @@ export default function Home() {
                   className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:border-yellow-400" />
                 <input required type="tel" placeholder={t('inquiry.phone')}
                   value={inquiryForm.phone}
-                  onChange={(e) => setInquiryForm({ ...inquiryForm, phone: e.target.value })}
+                  onFocus={() => { if (!inquiryForm.phone) setInquiryForm({ ...inquiryForm, phone: '+7 ' }) }}
+                  onChange={(e) => setInquiryForm({ ...inquiryForm, phone: formatKzPhone(e.target.value) })}
+                  maxLength={16}
+                  pattern="\+7 \d{3} \d{3} \d{2} \d{2}"
+                  title={t('auth.phone_hint')}
                   className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:border-yellow-400" />
                 <textarea placeholder={t('inquiry.message')}
                   value={inquiryForm.message}

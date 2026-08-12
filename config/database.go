@@ -64,10 +64,8 @@ func ConnectDB() {
 		&models.Category{},
 		&models.ProductSpec{},
 		&models.Product{},
-		&models.Order{},
-		&models.OrderItem{},
+		&models.ProductVariant{},
 		&models.Inquiry{},
-		&models.Payment{},
 	)
 	log.Println("Database migrated!")
 
@@ -96,6 +94,10 @@ func runMigrations(host, user, password, dbname, port string) {
 
 func ptr(v float64) *float64 { return &v }
 
+// seedProducts loads the real JSI Beton Almaty price list (docs/pricelist.docx).
+// Prices confirmed with the site owner: rings/plates show both "Частникам/без НДС" (Price)
+// and "Фирма/с НДС" (PriceWholesale); blocks/columns show only the cash ("нал") price per
+// color variant, unit is per piece (шт).
 func seedProducts(db *gorm.DB) {
 	var count int64
 	db.Model(&models.Category{}).Count(&count)
@@ -104,9 +106,11 @@ func seedProducts(db *gorm.DB) {
 	}
 
 	cats := []models.Category{
-		{NameRu: "Товарный бетон", NameKz: "Тауарлы бетон", NameEn: "Ready-Mix Concrete", Slug: "ready-mix-concrete"},
-		{NameRu: "Растворы и смеси", NameKz: "Ерітінділер мен қоспалар", NameEn: "Mortars & Mixes", Slug: "mortars-mixes"},
-		{NameRu: "Штучные изделия", NameKz: "Дайын бұйымдар", NameEn: "Precast Products", Slug: "precast-products"},
+		{NameRu: "Кольца колодезные", NameKz: "Құдық сақиналары", NameEn: "Well Rings", Slug: "well-rings"},
+		{NameRu: "Плиты перекрытия колодцев", NameKz: "Құдық жабын тақталары", NameEn: "Well Cover Plates", Slug: "well-cover-plates"},
+		{NameRu: "Плиты днища колодцев", NameKz: "Құдық түп тақталары", NameEn: "Well Bottom Plates", Slug: "well-bottom-plates"},
+		{NameRu: "Блоки и колонны", NameKz: "Блоктар мен бағаналар", NameEn: "Blocks & Columns", Slug: "blocks-columns"},
+		{NameRu: "Бетон", NameKz: "Бетон", NameEn: "Ready-Mix Concrete", Slug: "concrete"},
 	}
 	for i := range cats {
 		db.Create(&cats[i])
@@ -114,216 +118,212 @@ func seedProducts(db *gorm.DB) {
 	log.Println("Categories seeded")
 
 	type productSeed struct {
-		p     models.Product
-		specs []models.ProductSpec
+		p        models.Product
+		specs    []models.ProductSpec
+		variants []models.ProductVariant
 	}
 
-	seeds := []productSeed{
-		// --- Товарный бетон ---
-		{
+	ringDesc := func(code string) (string, string, string) {
+		return fmt.Sprintf("Железобетонное кольцо колодезное %s. Применяется для устройства смотровых, канализационных и водопроводных колодцев, септиков.", code),
+			fmt.Sprintf("%s темірбетон құдық сақинасы. Тексеру құдықтарын, кәріз және су құбыры құдықтарын, септиктерді салуға арналған.", code),
+			fmt.Sprintf("Reinforced concrete well ring %s. Used for inspection wells, sewage and water supply wells, septic tanks.", code)
+	}
+	plateDesc := func(code, purposeRu, purposeKz, purposeEn string) (string, string, string) {
+		return fmt.Sprintf("Железобетонная %s %s.", purposeRu, code),
+			fmt.Sprintf("%s темірбетон %s.", code, purposeKz),
+			fmt.Sprintf("Reinforced concrete %s %s.", purposeEn, code)
+	}
+	blockDesc := func(nameRu, nameKz, nameEn string) (string, string, string) {
+		return fmt.Sprintf("%s из вибропрессованного бетона.", nameRu),
+			fmt.Sprintf("%s, вибробасылған бетоннан жасалған.", nameKz),
+			fmt.Sprintf("%s made of vibro-pressed concrete.", nameEn)
+	}
+
+	seeds := []productSeed{}
+
+	// --- Кольца колодезные ---
+	type ringSeed struct {
+		code               string
+		size               string
+		volume             string
+		weight             string
+		price, priceWholes float64
+	}
+	rings := []ringSeed{
+		{"КС10.6", "1000×590 мм", "0.16 м³", "400 кг", 12000, 13500},
+		{"КС10.9", "1000×890 мм", "0.24 м³", "600 кг", 14000, 17000},
+		{"КС15.6", "1500×590 мм", "0.27 м³", "660 кг", 16000, 18000},
+		{"КС15.9", "1500×890 мм", "0.4 м³", "1000 кг", 18000, 24000},
+		{"КС20.6", "2000×590 мм", "0.39 м³", "980 кг", 29000, 32000},
+		{"КС20.9", "2000×890 мм", "0.59 м³", "1480 кг", 33500, 38000},
+	}
+	for _, r := range rings {
+		descRu, descKz, descEn := ringDesc(r.code)
+		seeds = append(seeds, productSeed{
 			p: models.Product{
-				CategoryID:    cats[0].ID,
-				NameRu:        "Бетон М100 (B7.5)",
-				NameKz:        "Бетон М100 (B7.5)",
-				NameEn:        "Concrete M100 (B7.5)",
-				DescriptionRu: "Бетон марки М100 применяется для подготовительных работ, устройства подстилающих слоёв и стяжек.",
-				DescriptionKz: "М100 маркалы бетон дайындық жұмыстары мен тегіс қабаттарға қолданылады.",
-				DescriptionEn: "M100 concrete is used for preparatory work, leveling layers and screeds.",
-				Price:         25000,
-				IsActive:      true,
+				CategoryID: cats[0].ID, NameRu: r.code, NameKz: r.code, NameEn: r.code,
+				DescriptionRu: descRu, DescriptionKz: descKz, DescriptionEn: descEn,
+				Price: r.price, PriceWholesale: ptr(r.priceWholes), IsActive: true,
 			},
 			specs: []models.ProductSpec{
-				{Key: "Класс прочности", Value: "B7.5"},
-				{Key: "Подвижность", Value: "П3"},
-				{Key: "Морозостойкость", Value: "F50"},
-				{Key: "Водонепроницаемость", Value: "W2"},
-				{Key: "Единица", Value: "м³"},
-			},
-		},
-		{
-			p: models.Product{
-				CategoryID:    cats[0].ID,
-				NameRu:        "Бетон М200 (B15)",
-				NameKz:        "Бетон М200 (B15)",
-				NameEn:        "Concrete M200 (B15)",
-				DescriptionRu: "Бетон М200 — универсальная марка для фундаментов, полов, дорожек и отмосток.",
-				DescriptionKz: "М200 бетоны іргетас, еден және жолдар үшін қолданылады.",
-				DescriptionEn: "M200 concrete — a versatile grade for foundations, floors, paths and aprons.",
-				Price:         35000,
-				DiscountPrice: ptr(32000),
-				IsActive:      true,
-			},
-			specs: []models.ProductSpec{
-				{Key: "Класс прочности", Value: "B15"},
-				{Key: "Подвижность", Value: "П3"},
-				{Key: "Морозостойкость", Value: "F100"},
-				{Key: "Водонепроницаемость", Value: "W4"},
-				{Key: "Единица", Value: "м³"},
-			},
-		},
-		{
-			p: models.Product{
-				CategoryID:    cats[0].ID,
-				NameRu:        "Бетон М300 (B22.5)",
-				NameKz:        "Бетон М300 (B22.5)",
-				NameEn:        "Concrete M300 (B22.5)",
-				DescriptionRu: "Бетон М300 используется для монолитных перекрытий, колонн, несущих конструкций.",
-				DescriptionKz: "М300 бетоны монолитті перекрытиелер мен тіреу конструкцияларына арналған.",
-				DescriptionEn: "M300 concrete is used for monolithic slabs, columns and load-bearing structures.",
-				Price:         42000,
-				IsActive:      true,
-			},
-			specs: []models.ProductSpec{
-				{Key: "Класс прочности", Value: "B22.5"},
-				{Key: "Подвижность", Value: "П4"},
-				{Key: "Морозостойкость", Value: "F150"},
-				{Key: "Водонепроницаемость", Value: "W6"},
-				{Key: "Единица", Value: "м³"},
-			},
-		},
-		{
-			p: models.Product{
-				CategoryID:    cats[0].ID,
-				NameRu:        "Бетон М400 (B30)",
-				NameKz:        "Бетон М400 (B30)",
-				NameEn:        "Concrete M400 (B30)",
-				DescriptionRu: "Высокопрочный бетон М400 для мостов, гидротехнических сооружений и ответственных конструкций.",
-				DescriptionKz: "М400 жоғары беріктікті бетон — көпірлер мен су техникалық ғимараттарға арналған.",
-				DescriptionEn: "High-strength M400 concrete for bridges, hydraulic structures and critical construction.",
-				Price:         52000,
-				DiscountPrice: ptr(49000),
-				IsActive:      true,
-			},
-			specs: []models.ProductSpec{
-				{Key: "Класс прочности", Value: "B30"},
-				{Key: "Подвижность", Value: "П4"},
-				{Key: "Морозостойкость", Value: "F200"},
-				{Key: "Водонепроницаемость", Value: "W8"},
-				{Key: "Единица", Value: "м³"},
-			},
-		},
-		// --- Растворы и смеси ---
-		{
-			p: models.Product{
-				CategoryID:    cats[1].ID,
-				NameRu:        "Кладочный раствор М75",
-				NameKz:        "Қалау ерітіндісі М75",
-				NameEn:        "Masonry Mortar M75",
-				DescriptionRu: "Цементно-песчаный раствор для кладки кирпича, газоблока и камня.",
-				DescriptionKz: "Кірпіш, газоблок және тас қалауға арналған цемент-құм ерітіндісі.",
-				DescriptionEn: "Cement-sand mortar for laying bricks, aerated blocks and stone.",
-				Price:         22000,
-				IsActive:      true,
-			},
-			specs: []models.ProductSpec{
-				{Key: "Марка", Value: "М75"},
-				{Key: "Подвижность", Value: "7–8 см"},
-				{Key: "Размер фракции", Value: "до 2.5 мм"},
-				{Key: "Единица", Value: "м³"},
-			},
-		},
-		{
-			p: models.Product{
-				CategoryID:    cats[1].ID,
-				NameRu:        "Пескобетон М150",
-				NameKz:        "Құм-бетон М150",
-				NameEn:        "Sand Concrete M150",
-				DescriptionRu: "Пескобетон для стяжки пола, выравнивания поверхностей и устройства дорожек.",
-				DescriptionKz: "Еден стяжкасы мен жол жабынына арналған құм-бетон.",
-				DescriptionEn: "Sand concrete for floor screeds, surface leveling and pathways.",
-				Price:         28000,
-				DiscountPrice: ptr(25500),
-				IsActive:      true,
-			},
-			specs: []models.ProductSpec{
-				{Key: "Марка", Value: "М150"},
-				{Key: "Размер фракции", Value: "до 5 мм"},
-				{Key: "Расход воды", Value: "170–190 л/м³"},
-				{Key: "Единица", Value: "м³"},
-			},
-		},
-		{
-			p: models.Product{
-				CategoryID:    cats[1].ID,
-				NameRu:        "Штукатурный раствор М50",
-				NameKz:        "Сылақ ерітіндісі М50",
-				NameEn:        "Plaster Mortar M50",
-				DescriptionRu: "Известково-цементный штукатурный раствор для внутренних и наружных работ.",
-				DescriptionKz: "Ішкі және сыртқы жұмыстарға арналған әк-цемент сылақ ерітіндісі.",
-				DescriptionEn: "Lime-cement plaster mortar for interior and exterior finishing works.",
-				Price:         18000,
-				IsActive:      true,
-			},
-			specs: []models.ProductSpec{
-				{Key: "Марка", Value: "М50"},
-				{Key: "Толщина слоя", Value: "10–30 мм"},
-				{Key: "Единица", Value: "м³"},
-			},
-		},
-		// --- Штучные изделия ---
-		{
-			p: models.Product{
-				CategoryID:    cats[2].ID,
-				NameRu:        "Тротуарная плитка 200×100×60",
-				NameKz:        "Тротуарлық тақтайша 200×100×60",
-				NameEn:        "Paving Slab 200×100×60",
-				DescriptionRu: "Вибропрессованная тротуарная плитка серого цвета для пешеходных зон и дворовых территорий.",
-				DescriptionKz: "Жаяу жүргіншілер аймақтарына арналған сұр түсті вибробасылған тақтайша.",
-				DescriptionEn: "Vibro-pressed grey paving slab for pedestrian zones and courtyards.",
-				Price:         1500,
-				DiscountPrice: ptr(1350),
-				IsActive:      true,
-			},
-			specs: []models.ProductSpec{
-				{Key: "Размер", Value: "200×100×60 мм"},
-				{Key: "Вес", Value: "2.8 кг/шт"},
-				{Key: "Класс прочности", Value: "B22.5"},
-				{Key: "Морозостойкость", Value: "F200"},
-				{Key: "Цвет", Value: "Серый"},
-				{Key: "Единица", Value: "м²"},
-			},
-		},
-		{
-			p: models.Product{
-				CategoryID:    cats[2].ID,
-				NameRu:        "Бордюрный камень БР 100.30.15",
-				NameKz:        "Бордюр тасы БР 100.30.15",
-				NameEn:        "Curb Stone BR 100.30.15",
-				DescriptionRu: "Дорожный бетонный бордюр для разграничения проезжей части и тротуара.",
-				DescriptionKz: "Жол және жаяу жол бөлігін бөлуге арналған бетон бордюр.",
-				DescriptionEn: "Concrete road curb for separating carriageway and pavement.",
-				Price:         2800,
-				IsActive:      true,
-			},
-			specs: []models.ProductSpec{
-				{Key: "Размер", Value: "1000×300×150 мм"},
-				{Key: "Вес", Value: "110 кг"},
-				{Key: "Класс прочности", Value: "B22.5"},
-				{Key: "Морозостойкость", Value: "F150"},
+				{Key: "Размер", Value: r.size},
+				{Key: "Объём", Value: r.volume},
+				{Key: "Вес", Value: r.weight},
 				{Key: "Единица", Value: "шт"},
 			},
-		},
-		{
+		})
+	}
+
+	// --- Плиты перекрытия колодцев ---
+	type plateSeed struct {
+		code               string
+		size               string
+		volume             string
+		weight             string
+		price, priceWholes float64
+	}
+	coverPlates := []plateSeed{
+		{"ПП10-1", "1160×150(700) мм", "0.1 м³", "250 кг", 13500, 18000},
+		{"1ПП15-1", "1680×150(700) мм", "0.27 м³", "680 кг", 19000, 30000},
+		{"1ПП15-2 (усиленная)", "1680×150(700) мм", "0.27 м³", "680 кг", 35000, 40000},
+		{"1ПП20-1", "2200×160(700) мм", "0.51 м³", "1275 кг", 35000, 48000},
+		{"1ПП20-2 (усиленная)", "2200×160(700) мм", "0.51 м³", "1275 кг", 45000, 70000},
+	}
+	for _, p := range coverPlates {
+		descRu, descKz, descEn := plateDesc(p.code, "плита перекрытия колодца (крышка)", "құдық жабын тақтасы (қақпақ)", "well cover plate (lid)")
+		seeds = append(seeds, productSeed{
 			p: models.Product{
-				CategoryID:    cats[2].ID,
-				NameRu:        "Кольцо колодезное КС-10",
-				NameKz:        "Құдық сақинасы КС-10",
-				NameEn:        "Well Ring KS-10",
-				DescriptionRu: "Железобетонное кольцо для строительства колодцев, септиков и смотровых камер.",
-				DescriptionKz: "Тексеру шахталары мен ағын сулар жүйесіне арналған темірбетон сақина.",
-				DescriptionEn: "Reinforced concrete ring for wells, septic tanks and inspection chambers.",
-				Price:         8500,
-				DiscountPrice: ptr(7800),
-				IsActive:      true,
+				CategoryID: cats[1].ID, NameRu: p.code, NameKz: p.code, NameEn: p.code,
+				DescriptionRu: descRu, DescriptionKz: descKz, DescriptionEn: descEn,
+				Price: p.price, PriceWholesale: ptr(p.priceWholes), IsActive: true,
 			},
 			specs: []models.ProductSpec{
-				{Key: "Внутренний диаметр", Value: "1000 мм"},
-				{Key: "Высота", Value: "900 мм"},
-				{Key: "Вес", Value: "600 кг"},
-				{Key: "Класс прочности", Value: "B15"},
+				{Key: "Размер", Value: p.size},
+				{Key: "Объём", Value: p.volume},
+				{Key: "Вес", Value: p.weight},
 				{Key: "Единица", Value: "шт"},
 			},
+		})
+	}
+
+	// --- Плиты днища колодцев ---
+	bottomPlates := []plateSeed{
+		{"ПН10", "1160×100 мм", "0.11 м³", "275 кг", 13500, 18000},
+		{"ПН15", "1680×120 мм", "0.27 м³", "675 кг", 19000, 30000},
+		{"ПН20", "2200×120 мм", "0.46 м³", "1150 кг", 35000, 48000},
+	}
+	for _, p := range bottomPlates {
+		descRu, descKz, descEn := plateDesc(p.code, "плита днища колодца", "құдық түп тақтасы", "well bottom plate")
+		seeds = append(seeds, productSeed{
+			p: models.Product{
+				CategoryID: cats[2].ID, NameRu: p.code, NameKz: p.code, NameEn: p.code,
+				DescriptionRu: descRu, DescriptionKz: descKz, DescriptionEn: descEn,
+				Price: p.price, PriceWholesale: ptr(p.priceWholes), IsActive: true,
+			},
+			specs: []models.ProductSpec{
+				{Key: "Размер", Value: p.size},
+				{Key: "Объём", Value: p.volume},
+				{Key: "Вес", Value: p.weight},
+				{Key: "Единица", Value: "шт"},
+			},
+		})
+	}
+
+	// --- Блоки и колонны (цена "нал" по цвету, безнал на сайте не показываем) ---
+	descRu, descKz, descEn := blockDesc("Сплитерный блок 20×20×40", "Сплитерлі блок 20×20×40", "Splitter block 20×20×40")
+	seeds = append(seeds, productSeed{
+		p: models.Product{
+			CategoryID: cats[3].ID, NameRu: "Сплитерный блок 20×20×40", NameKz: "Сплитерлі блок 20×20×40", NameEn: "Splitter block 20×20×40",
+			DescriptionRu: descRu, DescriptionKz: descKz, DescriptionEn: descEn,
+			Price: 190, IsActive: true,
 		},
+		specs:    []models.ProductSpec{{Key: "Размер", Value: "20×20×40 см"}, {Key: "Единица", Value: "шт"}},
+		variants: []models.ProductVariant{{ColorKey: "grey", Price: 190}, {ColorKey: "red", Price: 310}, {ColorKey: "black", Price: 350}},
+	})
+
+	descRu, descKz, descEn = blockDesc("Сплитерный блок рванный 20×20×40", "Сплитерлі жарылған блок 20×20×40", "Split-face splitter block 20×20×40")
+	seeds = append(seeds, productSeed{
+		p: models.Product{
+			CategoryID: cats[3].ID, NameRu: "Сплитерный блок – рванный 20×20×40", NameKz: "Сплитерлі блок – жарылған 20×20×40", NameEn: "Splitter block – split-face 20×20×40",
+			DescriptionRu: descRu, DescriptionKz: descKz, DescriptionEn: descEn,
+			Price: 290, IsActive: true,
+		},
+		specs:    []models.ProductSpec{{Key: "Размер", Value: "20×20×40 см"}, {Key: "Единица", Value: "шт"}},
+		variants: []models.ProductVariant{{ColorKey: "grey", Price: 290}, {ColorKey: "red", Price: 350}, {ColorKey: "black", Price: 380}},
+	})
+
+	descRu, descKz, descEn = blockDesc("Колонна/тумба 33×33×20", "Баған/тумба 33×33×20", "Column/pillar 33×33×20")
+	seeds = append(seeds, productSeed{
+		p: models.Product{
+			CategoryID: cats[3].ID, NameRu: "Колонна/тумба 33×33×20", NameKz: "Баған/тумба 33×33×20", NameEn: "Column/pillar 33×33×20",
+			DescriptionRu: descRu, DescriptionKz: descKz, DescriptionEn: descEn,
+			Price: 320, IsActive: true,
+		},
+		specs:    []models.ProductSpec{{Key: "Размер", Value: "33×33×20 см"}, {Key: "Единица", Value: "шт"}},
+		variants: []models.ProductVariant{{ColorKey: "grey", Price: 320}, {ColorKey: "red", Price: 420}, {ColorKey: "black", Price: 450}},
+	})
+
+	descRu, descKz, descEn = blockDesc("Рванная колонна/тумба 33×33×20", "Жарылған баған/тумба 33×33×20", "Split-face column/pillar 33×33×20")
+	seeds = append(seeds, productSeed{
+		p: models.Product{
+			CategoryID: cats[3].ID, NameRu: "Рванная колонна/тумба 33×33×20", NameKz: "Жарылған баған/тумба 33×33×20", NameEn: "Split-face column/pillar 33×33×20",
+			DescriptionRu: descRu, DescriptionKz: descKz, DescriptionEn: descEn,
+			Price: 400, IsActive: true,
+		},
+		specs:    []models.ProductSpec{{Key: "Размер", Value: "33×33×20 см"}, {Key: "Единица", Value: "шт"}},
+		variants: []models.ProductVariant{{ColorKey: "grey", Price: 400}, {ColorKey: "red", Price: 450}, {ColorKey: "black", Price: 500}},
+	})
+
+	descRu, descKz, descEn = blockDesc("Межкомнатный блок 12×20×40", "Бөлме аралық блок 12×20×40", "Interior partition block 12×20×40")
+	seeds = append(seeds, productSeed{
+		p: models.Product{
+			CategoryID: cats[3].ID, NameRu: "Межкомнатный блок 12×20×40", NameKz: "Бөлме аралық блок 12×20×40", NameEn: "Interior partition block 12×20×40",
+			DescriptionRu: descRu, DescriptionKz: descKz, DescriptionEn: descEn,
+			Price: 155, IsActive: true,
+		},
+		specs: []models.ProductSpec{{Key: "Размер", Value: "12×20×40 см"}, {Key: "Единица", Value: "шт"}},
+	})
+
+	descRu, descKz, descEn = blockDesc("Колонна/тумба 40×20×40", "Баған/тумба 40×20×40", "Column/pillar 40×20×40")
+	seeds = append(seeds, productSeed{
+		p: models.Product{
+			CategoryID: cats[3].ID, NameRu: "Колонна/тумба 40×20×40", NameKz: "Баған/тумба 40×20×40", NameEn: "Column/pillar 40×20×40",
+			DescriptionRu: descRu, DescriptionKz: descKz, DescriptionEn: descEn,
+			Price: 500, IsActive: true,
+		},
+		specs:    []models.ProductSpec{{Key: "Размер", Value: "40×20×40 см"}, {Key: "Единица", Value: "шт"}},
+		variants: []models.ProductVariant{{ColorKey: "grey", Price: 500}, {ColorKey: "red", Price: 620}, {ColorKey: "black", Price: 650}},
+	})
+
+	// --- Бетон (цена за 1 м³, с НДС и доставкой — по прайсу "КП ЖСИ.docx") ---
+	type concreteSeed struct {
+		grade string
+		price float64
+	}
+	concreteGrades := []concreteSeed{
+		{"B7.5 (М-100)", 23000},
+		{"B12.5 (М-150)", 23500},
+		{"B15 (М-200)", 24500},
+		{"B20 (М-250)", 25500},
+		{"B22.5 (М-300)", 26800},
+		{"B25 (М-350)", 27800},
+	}
+	for _, g := range concreteGrades {
+		name := "Бетон " + g.grade
+		seeds = append(seeds, productSeed{
+			p: models.Product{
+				CategoryID: cats[4].ID, NameRu: name, NameKz: name, NameEn: "Concrete " + g.grade,
+				DescriptionRu: fmt.Sprintf("Товарный бетон марки %s. Цена за 1 м³, включая НДС и доставку.", g.grade),
+				DescriptionKz: fmt.Sprintf("%s маркалы тауарлы бетон. 1 м³ бағасы, ҚҚС және жеткізу қосылған.", g.grade),
+				DescriptionEn: fmt.Sprintf("Ready-mix concrete grade %s. Price per 1 m³, VAT and delivery included.", g.grade),
+				Price:         g.price, IsActive: true,
+			},
+			specs: []models.ProductSpec{
+				{Key: "Марка", Value: g.grade},
+				{Key: "Единица", Value: "м³"},
+				{Key: "Доставка", Value: "включена"},
+			},
+		})
 	}
 
 	for i := range seeds {
@@ -331,6 +331,10 @@ func seedProducts(db *gorm.DB) {
 		for j := range seeds[i].specs {
 			seeds[i].specs[j].ProductID = seeds[i].p.ID
 			db.Create(&seeds[i].specs[j])
+		}
+		for j := range seeds[i].variants {
+			seeds[i].variants[j].ProductID = seeds[i].p.ID
+			db.Create(&seeds[i].variants[j])
 		}
 	}
 	log.Println("Products seeded:", len(seeds))
@@ -352,10 +356,11 @@ func seedAdmin(db *gorm.DB) {
 		return
 	}
 	db.Create(&models.User{
-		Name:     "Administrator",
-		Email:    adminEmail,
-		Password: string(hashed),
-		Role:     "admin",
+		Name:       "Administrator",
+		Email:      adminEmail,
+		Password:   string(hashed),
+		Role:       "admin",
+		IsVerified: true,
 	})
 	log.Println("Default admin created:", adminEmail)
 }

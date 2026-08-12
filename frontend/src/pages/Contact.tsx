@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { createInquiry } from '../api'
+import { formatKzPhone } from '../utils/phone'
 
 export default function Contact() {
   const { t } = useTranslation()
@@ -21,11 +22,10 @@ export default function Contact() {
   }
 
   const contacts = [
-    { icon: '📞', label: 'Телефон', value: '+7 (727) 000-00-00', href: 'tel:+77270000000' },
-    { icon: '📱', label: 'WhatsApp', value: '+7 (700) 000-00-00', href: 'https://wa.me/77000000000' },
-    { icon: '📧', label: 'Email', value: 'info@jbibeton.kz', href: 'mailto:info@jbibeton.kz' },
-    { icon: '📍', label: 'Адрес', value: 'г. Алматы, ул. Промышленная, 15', href: 'https://2gis.kz/almaty' },
-    { icon: '⏰', label: 'Режим работы', value: 'Пн–Пт: 8:00–18:00, Сб: 9:00–15:00', href: null },
+    { icon: '📞', label: t('contact.phone'), value: '+7 747 563 1252', href: 'tel:+77475631252' },
+    { icon: '📱', label: 'WhatsApp', value: '+7 747 563 1252', href: 'https://wa.me/77475631252' },
+    { icon: '📧', label: 'Email', value: 'toozhsi2030@mail.ru', href: 'mailto:toozhsi2030@mail.ru' },
+    { icon: '📍', label: t('contact.address'), value: 'г. Алматы, Турксибский р-н, ул. Спасская, 105/1', href: null },
   ]
 
   return (
@@ -34,9 +34,9 @@ export default function Contact() {
       <section className="bg-gray-900 text-white py-16 px-4">
         <div className="max-w-4xl mx-auto text-center">
           <h1 className="text-4xl font-bold mb-4">
-            📍 Контакты <span className="text-yellow-400">JBI Beton</span>
+            📍 {t('contact.title')} <span className="text-yellow-400">JSI Beton</span>
           </h1>
-          <p className="text-gray-400 text-lg">Свяжитесь с нами — ответим в течение 30 минут</p>
+          <p className="text-gray-400 text-lg">{t('contact.subtitle')}</p>
         </div>
       </section>
 
@@ -44,7 +44,7 @@ export default function Contact() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
           {/* Contact info */}
           <div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-8">Наши контакты</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-8">{t('contact.our_contacts')}</h2>
             <div className="space-y-4">
               {contacts.map((c) => (
                 <div key={c.label} className="flex items-start gap-4 bg-white rounded-xl p-4 shadow-sm">
@@ -67,35 +67,22 @@ export default function Contact() {
                 </div>
               ))}
             </div>
-
-            {/* Map placeholder */}
-            <div className="mt-8 rounded-2xl overflow-hidden shadow-sm h-64 bg-gray-200 relative">
-              <iframe
-                title="JBI Beton location"
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2907.5!2d76.9286!3d43.2567!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zNDPCsDE1JzI0LjEiTiA3NsKwNTUnNDMuMCJF!5e0!3m2!1sru!2skz!4v1"
-                width="100%"
-                height="100%"
-                style={{ border: 0 }}
-                allowFullScreen
-                loading="lazy"
-              />
-            </div>
           </div>
 
           {/* Contact form */}
           <div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-8">Написать нам</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-8">{t('contact.write_us')}</h2>
             <div className="bg-white rounded-2xl shadow-sm p-8">
               {sent ? (
                 <div className="text-center py-10">
                   <div className="text-6xl mb-4">✅</div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-2">Заявка отправлена!</h3>
-                  <p className="text-gray-600">Мы свяжемся с вами в течение 30 минут</p>
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">{t('contact.sent_title')}</h3>
+                  <p className="text-gray-600">{t('contact.sent_subtitle')}</p>
                   <button
                     onClick={() => setSent(false)}
                     className="mt-6 text-yellow-600 hover:text-yellow-700 font-medium"
                   >
-                    Отправить ещё
+                    {t('contact.send_more')}
                   </button>
                 </div>
               ) : (
@@ -107,7 +94,7 @@ export default function Contact() {
                       value={form.name}
                       onChange={(e) => setForm({ ...form, name: e.target.value })}
                       className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:border-yellow-400 transition"
-                      placeholder="Ваше имя"
+                      placeholder={t('contact.name_placeholder')}
                     />
                   </div>
                   <div>
@@ -115,7 +102,11 @@ export default function Contact() {
                     <input
                       required type="tel"
                       value={form.phone}
-                      onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                      onFocus={() => { if (!form.phone) setForm({ ...form, phone: '+7 ' }) }}
+                      onChange={(e) => setForm({ ...form, phone: formatKzPhone(e.target.value) })}
+                      maxLength={16}
+                      pattern="\+7 \d{3} \d{3} \d{2} \d{2}"
+                      title={t('auth.phone_hint')}
                       className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:border-yellow-400 transition"
                       placeholder="+7 700 000 00 00"
                     />
@@ -127,7 +118,7 @@ export default function Contact() {
                       onChange={(e) => setForm({ ...form, message: e.target.value })}
                       rows={4}
                       className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:border-yellow-400 transition resize-none"
-                      placeholder="Какой товар вас интересует? Какой объём?"
+                      placeholder={t('contact.message_placeholder')}
                     />
                   </div>
                   <button
@@ -135,10 +126,10 @@ export default function Contact() {
                     disabled={loading}
                     className="w-full bg-yellow-400 hover:bg-yellow-300 disabled:opacity-50 text-gray-900 font-bold py-4 rounded-xl text-lg transition"
                   >
-                    {loading ? 'Отправляем...' : `📞 ${t('inquiry.submit')}`}
+                    {loading ? t('contact.sending') : `📞 ${t('inquiry.submit')}`}
                   </button>
                   <p className="text-center text-xs text-gray-400">
-                    Нажимая кнопку, вы соглашаетесь с обработкой персональных данных
+                    {t('contact.consent')}
                   </p>
                 </form>
               )}
@@ -147,14 +138,14 @@ export default function Contact() {
             {/* Quick contact cards */}
             <div className="grid grid-cols-2 gap-4 mt-6">
               <a
-                href="tel:+77270000000"
+                href="tel:+77475631252"
                 className="bg-gray-900 hover:bg-gray-800 text-white rounded-xl p-4 text-center transition"
               >
                 <div className="text-3xl mb-1">📞</div>
-                <div className="font-semibold text-sm">Позвонить</div>
+                <div className="font-semibold text-sm">{t('contact.call')}</div>
               </a>
               <a
-                href="https://wa.me/77000000000"
+                href="https://wa.me/77475631252"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="bg-green-500 hover:bg-green-600 text-white rounded-xl p-4 text-center transition"

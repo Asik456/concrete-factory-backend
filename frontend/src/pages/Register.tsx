@@ -1,12 +1,11 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { register, login } from '../api'
-import { useAuth } from '../store/AuthContext'
+import { register } from '../api'
+import { formatKzPhone } from '../utils/phone'
 
 export default function Register() {
   const { t } = useTranslation()
-  const { login: authLogin } = useAuth()
   const navigate = useNavigate()
   const [form, setForm] = useState({ name: '', phone: '', email: '', password: '' })
   const [error, setError] = useState('')
@@ -18,17 +17,15 @@ export default function Register() {
     setError('')
     try {
       await register(form)
-      const loginRes = await login({ email: form.email, password: form.password })
-      authLogin(loginRes.data.token, loginRes.data.user)
-      navigate('/')
+      navigate(`/verify-email?email=${encodeURIComponent(form.email)}`)
     } catch (err: any) {
       const msg = err?.response?.data?.error
       if (msg?.toLowerCase().includes('email')) {
-        setError('Этот email уже зарегистрирован. Попробуйте войти.')
+        setError(t('auth.email_taken'))
       } else if (err?.code === 'ERR_NETWORK') {
-        setError('Сервер недоступен. Убедитесь что docker-compose up запущен.')
+        setError(t('auth.server_unavailable'))
       } else {
-        setError(msg || 'Ошибка регистрации. Попробуйте ещё раз.')
+        setError(t('auth.register_error'))
       }
     } finally {
       setLoading(false)
@@ -58,9 +55,13 @@ export default function Register() {
             <input
               type="tel"
               value={form.phone}
-              onChange={(e) => setForm({ ...form, phone: e.target.value })}
+              onFocus={() => { if (!form.phone) setForm({ ...form, phone: '+7 ' }) }}
+              onChange={(e) => setForm({ ...form, phone: formatKzPhone(e.target.value) })}
               className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:border-yellow-400"
               placeholder="+7 700 000 00 00"
+              maxLength={16}
+              pattern="\+7 \d{3} \d{3} \d{2} \d{2}"
+              title={t('auth.phone_hint')}
             />
           </div>
           <div>

@@ -35,14 +35,10 @@ func TestMain(m *testing.M) {
 			&models.Category{},
 			&models.ProductSpec{},
 			&models.Product{},
-			&models.Order{},
-			&models.OrderItem{},
+			&models.ProductVariant{},
 			&models.Inquiry{},
-			&models.Payment{},
 		)
-		db.Exec("DELETE FROM order_items")
-		db.Exec("DELETE FROM orders")
-		db.Exec("DELETE FROM payments")
+		db.Exec("DELETE FROM product_variants")
 		db.Exec("DELETE FROM inquiries")
 		db.Exec("DELETE FROM product_specs")
 		db.Exec("DELETE FROM products")
@@ -58,6 +54,8 @@ func TestMain(m *testing.M) {
 	})
 	r.POST("/register", handlers.Register)
 	r.POST("/login", handlers.Login)
+	r.POST("/verify-email", handlers.VerifyEmail)
+	r.POST("/resend-verification-code", handlers.ResendVerificationCode)
 	r.GET("/categories", handlers.GetCategories)
 	r.GET("/products", handlers.GetProducts)
 	r.GET("/products/:id", handlers.GetProductByID)
@@ -67,8 +65,6 @@ func TestMain(m *testing.M) {
 	auth.Use(middleware.AuthMiddleware())
 	{
 		auth.GET("/me", handlers.GetMe)
-		auth.POST("/orders", handlers.CreateOrder)
-		auth.GET("/my-orders", handlers.GetMyOrders)
 	}
 	testRouter = r
 
@@ -137,6 +133,9 @@ func TestLogin_Success(t *testing.T) {
 	req, _ := http.NewRequest(http.MethodPost, "/register", bytes.NewBuffer(regBody))
 	req.Header.Set("Content-Type", "application/json")
 	testRouter.ServeHTTP(w, req)
+
+	// Skip email verification in test (no real inbox to read the code from)
+	config.DB.Model(&models.User{}).Where("email = ?", "test_login@example.com").Update("is_verified", true)
 
 	// Login
 	loginBody, _ := json.Marshal(map[string]string{

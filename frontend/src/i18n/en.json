@@ -189,7 +189,15 @@
     "block": "Block",
     "unblock": "Unblock",
     "confirm_block": "Block this user?",
-    "no_users": "No users yet"
+    "no_users": "No users yet",
+    "search_users_placeholder": "Search by name or email...",
+    "filter_all_roles": "All roles",
+    "filter_all_status": "All statuses",
+    "filter_active": "Active",
+    "filter_inactive": "Inactive",
+    "sort_name": "Name (A-Z)",
+    "sort_date_desc": "Newest first",
+    "sort_date_asc": "Oldest first"
   },
   "common": {
     "loading": "Loading...",

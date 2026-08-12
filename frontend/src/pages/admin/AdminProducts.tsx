@@ -1,9 +1,11 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Product, Category, ProductSpec, ProductVariant, ColorKey } from '../../types'
 import { getProducts, getCategories, createProduct, updateProduct, deleteProduct } from '../../api'
 
 const COLOR_OPTIONS: ColorKey[] = ['grey', 'red', 'black']
+
+type SortOption = 'default' | 'name_asc' | 'price_asc' | 'price_desc'
 
 const emptyForm = {
   category_id: 0, name_ru: '', name_kz: '', name_en: '',
@@ -20,6 +22,10 @@ export default function AdminProducts() {
   const [form, setForm] = useState({ ...emptyForm })
   const [editingId, setEditingId] = useState<number | null>(null)
   const [showForm, setShowForm] = useState(false)
+  const [search, setSearch] = useState('')
+  const [categoryFilter, setCategoryFilter] = useState<number>(0)
+  const [activeFilter, setActiveFilter] = useState<'all' | 'active' | 'inactive'>('all')
+  const [sort, setSort] = useState<SortOption>('default')
 
   const load = () => {
     getProducts().then((r) => setProducts(r.data))
@@ -27,6 +33,33 @@ export default function AdminProducts() {
   }
 
   useEffect(() => { load() }, [])
+
+  const filtered = useMemo(() => {
+    let result = [...products]
+
+    if (search.trim()) {
+      const q = search.trim().toLowerCase()
+      result = result.filter((p) =>
+        p.name_ru?.toLowerCase().includes(q) ||
+        p.name_kz?.toLowerCase().includes(q) ||
+        p.name_en?.toLowerCase().includes(q)
+      )
+    }
+
+    if (categoryFilter) {
+      result = result.filter((p) => p.category_id === categoryFilter)
+    }
+
+    if (activeFilter !== 'all') {
+      result = result.filter((p) => (activeFilter === 'active' ? p.is_active : !p.is_active))
+    }
+
+    if (sort === 'name_asc') result.sort((a, b) => a.name_ru.localeCompare(b.name_ru))
+    if (sort === 'price_asc') result.sort((a, b) => a.price - b.price)
+    if (sort === 'price_desc') result.sort((a, b) => b.price - a.price)
+
+    return result
+  }, [products, search, categoryFilter, activeFilter, sort])
 
   const addSpec = () => setForm({ ...form, specs: [...form.specs, { key: '', value: '' }] })
   const updateSpec = (i: number, field: 'key' | 'value', val: string) => {
@@ -251,6 +284,46 @@ export default function AdminProducts() {
         </div>
       )}
 
+      {/* Search / filter / sort */}
+      <div className="flex flex-wrap items-center gap-3 mb-4">
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder={t('catalog.search_placeholder')}
+          className="flex-1 min-w-[200px] px-3 py-2 border rounded-lg text-sm focus:outline-none focus:border-yellow-400"
+        />
+        <select
+          value={categoryFilter}
+          onChange={(e) => setCategoryFilter(Number(e.target.value))}
+          className="px-3 py-2 border rounded-lg text-sm focus:outline-none focus:border-yellow-400"
+        >
+          <option value={0}>{t('catalog.all')}</option>
+          {categories.map((c) => (
+            <option key={c.id} value={c.id}>{c.name_ru}</option>
+          ))}
+        </select>
+        <select
+          value={activeFilter}
+          onChange={(e) => setActiveFilter(e.target.value as 'all' | 'active' | 'inactive')}
+          className="px-3 py-2 border rounded-lg text-sm focus:outline-none focus:border-yellow-400"
+        >
+          <option value="all">{t('admin.filter_all_status')}</option>
+          <option value="active">{t('admin.filter_active')}</option>
+          <option value="inactive">{t('admin.filter_inactive')}</option>
+        </select>
+        <select
+          value={sort}
+          onChange={(e) => setSort(e.target.value as SortOption)}
+          className="px-3 py-2 border rounded-lg text-sm focus:outline-none focus:border-yellow-400"
+        >
+          <option value="default">{t('catalog.sort_default')}</option>
+          <option value="name_asc">{t('admin.sort_name')}</option>
+          <option value="price_asc">{t('catalog.sort_price_asc')}</option>
+          <option value="price_desc">{t('catalog.sort_price_desc')}</option>
+        </select>
+      </div>
+
       <div className="bg-white rounded-xl shadow-sm overflow-hidden">
         <table className="w-full text-sm">
           <thead className="bg-gray-50 text-gray-600">
@@ -264,7 +337,9 @@ export default function AdminProducts() {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
-            {products.map((p) => (
+            {filtered.length === 0 ? (
+              <tr><td colSpan={6} className="text-center text-gray-500 py-10">{t('catalog.no_products')}</td></tr>
+            ) : filtered.map((p) => (
               <tr key={p.id} className="hover:bg-gray-50">
                 <td className="px-4 py-3 text-gray-500">{p.id}</td>
                 <td className="px-4 py-3 font-medium">{p.name_ru}</td>

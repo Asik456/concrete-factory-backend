@@ -63,15 +63,20 @@ func ConnectDB() {
 
 	runMigrations(host, user, password, dbname, port, sslmode)
 
-	db.AutoMigrate(
-		&models.User{},
-		&models.Category{},
-		&models.ProductSpec{},
-		&models.Product{},
-		&models.ProductVariant{},
-		&models.Inquiry{},
-	)
-	log.Println("Database migrated!")
+	// AutoMigrate is a safety net for local dev — it introspects every table's schema
+	// with dozens of individual queries, which is slow over a cross-region DB connection.
+	// SQL migrations already own the schema in production, so it can be skipped there.
+	if os.Getenv("SKIP_AUTOMIGRATE") != "true" {
+		db.AutoMigrate(
+			&models.User{},
+			&models.Category{},
+			&models.ProductSpec{},
+			&models.Product{},
+			&models.ProductVariant{},
+			&models.Inquiry{},
+		)
+		log.Println("Database migrated!")
+	}
 
 	seedAdmin(db)
 	seedProducts(db)

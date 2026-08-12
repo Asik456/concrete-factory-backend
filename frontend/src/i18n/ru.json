@@ -189,7 +189,15 @@
     "block": "Заблокировать",
     "unblock": "Разблокировать",
     "confirm_block": "Заблокировать пользователя?",
-    "no_users": "Пользователей нет"
+    "no_users": "Пользователей нет",
+    "search_users_placeholder": "Поиск по имени или email...",
+    "filter_all_roles": "Все роли",
+    "filter_all_status": "Все статусы",
+    "filter_active": "Активные",
+    "filter_inactive": "Неактивные",
+    "sort_name": "По имени (А-Я)",
+    "sort_date_desc": "Сначала новые",
+    "sort_date_asc": "Сначала старые"
   },
   "common": {
     "loading": "Загрузка...",

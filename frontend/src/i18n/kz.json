@@ -189,7 +189,15 @@
     "block": "Бұғаттау",
     "unblock": "Бұғаттан шығару",
     "confirm_block": "Пайдаланушыны бұғаттау керек пе?",
-    "no_users": "Пайдаланушылар жоқ"
+    "no_users": "Пайдаланушылар жоқ",
+    "search_users_placeholder": "Аты немесе email бойынша іздеу...",
+    "filter_all_roles": "Барлық рөлдер",
+    "filter_all_status": "Барлық мәртебелер",
+    "filter_active": "Белсенді",
+    "filter_inactive": "Белсенді емес",
+    "sort_name": "Аты бойынша (А-Я)",
+    "sort_date_desc": "Алдымен жаңалары",
+    "sort_date_asc": "Алдымен ескілері"
   },
   "common": {
     "loading": "Жүктелуде...",

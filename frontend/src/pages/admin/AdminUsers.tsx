@@ -1,16 +1,49 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { User } from '../../types'
 import { getAllUsers, updateUserRole, updateUserBlock } from '../../api'
 import { useAuth } from '../../store/AuthContext'
 
+type RoleFilter = 'all' | 'customer' | 'admin'
+type StatusFilter = 'all' | 'active' | 'blocked'
+type SortOption = 'date_desc' | 'date_asc' | 'name_asc'
+
 export default function AdminUsers() {
   const { t } = useTranslation()
   const { user: currentUser } = useAuth()
   const [users, setUsers] = useState<User[]>([])
+  const [search, setSearch] = useState('')
+  const [roleFilter, setRoleFilter] = useState<RoleFilter>('all')
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
+  const [sort, setSort] = useState<SortOption>('date_desc')
 
   const load = () => getAllUsers().then((r) => setUsers(r.data))
   useEffect(() => { load() }, [])
+
+  const filtered = useMemo(() => {
+    let result = [...users]
+
+    if (search.trim()) {
+      const q = search.trim().toLowerCase()
+      result = result.filter((u) =>
+        u.name?.toLowerCase().includes(q) || u.email?.toLowerCase().includes(q)
+      )
+    }
+
+    if (roleFilter !== 'all') {
+      result = result.filter((u) => u.role === roleFilter)
+    }
+
+    if (statusFilter !== 'all') {
+      result = result.filter((u) => (statusFilter === 'blocked' ? u.is_blocked : !u.is_blocked))
+    }
+
+    if (sort === 'name_asc') result.sort((a, b) => a.name.localeCompare(b.name))
+    if (sort === 'date_asc') result.sort((a, b) => new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime())
+    if (sort === 'date_desc') result.sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime())
+
+    return result
+  }, [users, search, roleFilter, statusFilter, sort])
 
   const handleRoleChange = async (id: number, role: string) => {
     await updateUserRole(id, role)
@@ -27,7 +60,45 @@ export default function AdminUsers() {
     <div>
       <h1 className="text-2xl font-bold text-gray-900 mb-6">{t('admin.users')}</h1>
 
-      {users.length === 0 ? (
+      {/* Search / filter / sort */}
+      <div className="flex flex-wrap items-center gap-3 mb-4">
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder={t('admin.search_users_placeholder')}
+          className="flex-1 min-w-[200px] px-3 py-2 border rounded-lg text-sm focus:outline-none focus:border-yellow-400"
+        />
+        <select
+          value={roleFilter}
+          onChange={(e) => setRoleFilter(e.target.value as RoleFilter)}
+          className="px-3 py-2 border rounded-lg text-sm focus:outline-none focus:border-yellow-400"
+        >
+          <option value="all">{t('admin.filter_all_roles')}</option>
+          <option value="customer">{t('admin.role_customer')}</option>
+          <option value="admin">{t('admin.role_admin')}</option>
+        </select>
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
+          className="px-3 py-2 border rounded-lg text-sm focus:outline-none focus:border-yellow-400"
+        >
+          <option value="all">{t('admin.filter_all_status')}</option>
+          <option value="active">{t('admin.active_status')}</option>
+          <option value="blocked">{t('admin.blocked')}</option>
+        </select>
+        <select
+          value={sort}
+          onChange={(e) => setSort(e.target.value as SortOption)}
+          className="px-3 py-2 border rounded-lg text-sm focus:outline-none focus:border-yellow-400"
+        >
+          <option value="date_desc">{t('admin.sort_date_desc')}</option>
+          <option value="date_asc">{t('admin.sort_date_asc')}</option>
+          <option value="name_asc">{t('admin.sort_name')}</option>
+        </select>
+      </div>
+
+      {filtered.length === 0 ? (
         <div className="text-gray-500 text-center py-20">{t('admin.no_users')}</div>
       ) : (
         <div className="bg-white rounded-xl shadow-sm overflow-hidden">
@@ -44,7 +115,7 @@ export default function AdminUsers() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {users.map((u) => {
+              {filtered.map((u) => {
                 const isSelf = currentUser?.id === u.id
                 return (
                   <tr key={u.id} className="hover:bg-gray-50">

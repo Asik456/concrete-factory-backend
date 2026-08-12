@@ -101,8 +101,8 @@ export default function AdminUsers() {
       {filtered.length === 0 ? (
         <div className="text-gray-500 text-center py-20">{t('admin.no_users')}</div>
       ) : (
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-          <table className="w-full text-sm">
+        <div className="bg-white rounded-xl shadow-sm overflow-x-auto">
+          <table className="w-full text-sm min-w-[720px]">
             <thead className="bg-gray-50 text-gray-600">
               <tr>
                 <th className="text-left px-4 py-3">{t('auth.name')}</th>

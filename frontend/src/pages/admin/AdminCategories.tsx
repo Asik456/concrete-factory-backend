@@ -85,8 +85,8 @@ export default function AdminCategories() {
         </div>
       )}
 
-      <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-        <table className="w-full text-sm">
+      <div className="bg-white rounded-xl shadow-sm overflow-x-auto">
+        <table className="w-full text-sm min-w-[560px]">
           <thead className="bg-gray-50 text-gray-600">
             <tr>
               <th className="text-left px-4 py-3">ID</th>

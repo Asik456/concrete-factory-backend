@@ -1,7 +1,10 @@
+import { useEffect, useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import Navbar from '../../components/Navbar'
 import Footer from '../../components/Footer'
+import { getInquiries } from '../../api'
+import { Inquiry } from '../../types'
 
 const links = [
   { to: '/admin/products', icon: '📦', key: 'admin.products' },
@@ -12,6 +15,13 @@ const links = [
 
 export default function AdminLayout() {
   const { t } = useTranslation()
+  const [unreadInquiries, setUnreadInquiries] = useState(0)
+
+  useEffect(() => {
+    getInquiries()
+      .then((r) => setUnreadInquiries(r.data.filter((i: Inquiry) => !i.is_read).length))
+      .catch(() => {})
+  }, [])
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -35,6 +45,11 @@ export default function AdminLayout() {
               >
                 <span>{link.icon}</span>
                 {t(link.key)}
+                {link.to === '/admin/inquiries' && unreadInquiries > 0 && (
+                  <span className="ml-auto bg-red-500 text-white text-xs font-bold px-1.5 py-0.5 rounded-full leading-none">
+                    {unreadInquiries}
+                  </span>
+                )}
               </NavLink>
             ))}
           </nav>
